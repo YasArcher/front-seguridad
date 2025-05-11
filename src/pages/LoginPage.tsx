@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import Button from "../components/ui/Button";
-import StatusMessage from "../components/ui/StatusMessage";
 import AuthLayout from "../layouts/AuthLayout";
 import { useNavigate, useLocation } from "react-router-dom";
 import { loginService } from "../services/authService";
 import { useAuth } from "../Context/AuthContext";
+import { toast } from 'react-toastify';
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { setToken } = useAuth();
@@ -37,7 +36,7 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError("Por favor complete todos los campos");
+      toast.error("Por favor complete todos los campos");
       return;
     }
 
@@ -46,7 +45,7 @@ const LoginPage = () => {
       await loginService(email, password);
       // No hacemos navigate, esperamos que llegue el correo con el enlace
     } catch (err) {
-      setError("Credenciales incorrectas. Por favor intente de nuevo.");
+      toast.error("Credenciales incorrectas. Por favor intente de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -68,8 +67,6 @@ const LoginPage = () => {
           Ingresa tus credenciales para continuar
         </p>
       </div>
-
-      <StatusMessage isLoading={loading} error={error} empty={false}>
         <div className="space-y-5">
           {/* Email Input */}
           <div>
@@ -215,7 +212,6 @@ const LoginPage = () => {
             </p>
           </div>
         </div>
-      </StatusMessage>
     </AuthLayout>
   );
 };

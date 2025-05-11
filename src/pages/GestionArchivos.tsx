@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import SearchBar from "../components/ui/SearchBar";
 import GenericList from "../components/ui/GenericList";
 import PageHeader from "../components/ui/PageHeader";
 import ContentContainer from "../components/ui/ContentContainer";
-import StatusMessage from "../components/ui/StatusMessage";
 import { useFiles } from "../hooks/useFiles";
+import { toast } from "react-toastify";
 import FileCard from "../components/ui/FileCard";
 
 const GestionArchivos = () => {
@@ -15,6 +15,20 @@ const GestionArchivos = () => {
     () => searchFiles(searchTerm),
     [searchTerm, searchFiles]
   );
+
+  // Mostrar toast de error
+  useEffect(() => {
+    if (error) {
+      toast.error(`Error: ${error}`);
+    }
+  }, [error]);
+
+  // Mostrar toast si no hay resultados
+  useEffect(() => {
+    if (!loading && filteredFiles.length === 0 && searchTerm) {
+      toast.info("No hay archivos que coincidan con la búsqueda.");
+    }
+  }, [filteredFiles, loading, searchTerm]);
 
   return (
     <div className="flex flex-col flex-1">
@@ -29,19 +43,12 @@ const GestionArchivos = () => {
       </PageHeader>
 
       <ContentContainer>
-        <StatusMessage
+        <GenericList
+          items={filteredFiles}
           isLoading={loading}
-          error={error}
-          empty={filteredFiles.length === 0}
           emptyMessage="No hay archivos que coincidan con la búsqueda."
-        >
-          <GenericList
-            items={filteredFiles}
-            isLoading={loading}
-            emptyMessage="No hay archivos que coincidan con la búsqueda."
-            renderItem={(file) => <FileCard key={file.id} {...file} />}
-          />
-        </StatusMessage>
+          renderItem={(file) => <FileCard key={file.id} {...file} />}
+        />
       </ContentContainer>
     </div>
   );

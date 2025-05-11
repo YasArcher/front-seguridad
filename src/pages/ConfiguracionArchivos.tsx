@@ -1,21 +1,22 @@
-import { useState, useCallback } from 'react';
-import SearchBar from '../components/ui/SearchBar';
-import PageHeader from '../components/ui/PageHeader';
-import ContentContainer from '../components/ui/ContentContainer';
-import UploadFileModal from '../components/ui/UploadFileModal';
-import UserPermissionsModal from '../components/ui/UserPermissionsModal';
-import Button from '../components/ui/Button';
-import StatusMessage from '../components/ui/StatusMessage';
-import { useFiles } from '../hooks/useFiles';
-import type { FileCardProps } from '../components/ui/types/FileCardProps';
-import { mockUsers } from '../services/userService';
-import GenericList from '../components/ui/GenericList';
-import FileCard from '../components/ui/FileCard';
+import { useState, useCallback, useEffect } from "react";
+import SearchBar from "../components/ui/SearchBar";
+import PageHeader from "../components/ui/PageHeader";
+import ContentContainer from "../components/ui/ContentContainer";
+import UploadFileModal from "../components/ui/UploadFileModal";
+import UserPermissionsModal from "../components/ui/UserPermissionsModal";
+import Button from "../components/ui/Button";
+import { useFiles } from "../hooks/useFiles";
+import type { FileCardProps } from "../components/ui/types/FileCardProps";
+import { mockUsers } from "../services/userService";
+import GenericList from "../components/ui/GenericList";
+import FileCard from "../components/ui/FileCard";
+import { toast } from "react-toastify";
 
 const ConfiguracionArchivos = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] = useState(false);
+  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] =
+    useState(false);
   const [selectedFile, setSelectedFile] = useState<FileCardProps | null>(null);
 
   const addCustomActions = useCallback(
@@ -29,25 +30,56 @@ const ConfiguracionArchivos = () => {
     []
   );
 
-  const { files: filesWithActions, searchFiles, loading, error } = useFiles(addCustomActions);
+  const {
+    files: filesWithActions,
+    searchFiles,
+    loading,
+    error,
+  } = useFiles(addCustomActions);
   const filteredFiles = searchFiles(searchTerm);
+
+  // Toast for error
+  useEffect(() => {
+    if (error) {
+      toast.error(`Error: ${error}`);
+    }
+  }, [error]);
+
+  // Toast for empty search result
+  useEffect(() => {
+    if (!loading && filteredFiles.length === 0 && searchTerm) {
+      toast.info("No se encontraron archivos en la configuración.");
+    }
+  }, [filteredFiles, loading, searchTerm]);
 
   const handleAddUser = (userId: string) => {
     console.log(`Añadiendo usuario ${userId} a ${selectedFile?.title}`);
+    toast.success(`Usuario ${userId} añadido a ${selectedFile?.title}.`);
   };
 
   const handleRemoveUser = (userId: string) => {
-    console.log(`Quitando permiso de usuario ${userId} de ${selectedFile?.title}`);
+    console.log(
+      `Quitando permiso de usuario ${userId} de ${selectedFile?.title}`
+    );
+    toast.info(
+      `Permiso de usuario ${userId} eliminado de ${selectedFile?.title}.`
+    );
   };
 
   const handleGenerateReport = () => {
     console.log(`Generando informe para ${selectedFile?.title}`);
+    toast.success(`Informe generado para ${selectedFile?.title}.`);
   };
 
-  const handleUploadFile = async (file: File, encryptionKey: string): Promise<void> => {
-    console.log('Archivo a subir:', file.name);
-    console.log('Clave de cifrado:', encryptionKey);
+  const handleUploadFile = async (
+    file: File,
+    encryptionKey: string
+  ): Promise<void> => {
+    console.log("Archivo a subir:", file.name);
+    console.log("Clave de cifrado:", encryptionKey);
+    toast.info("Subiendo archivo...");
     await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+    toast.success("Archivo subido correctamente.");
   };
 
   return (
@@ -66,7 +98,12 @@ const ConfiguracionArchivos = () => {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             }
           />
@@ -79,19 +116,12 @@ const ConfiguracionArchivos = () => {
       </PageHeader>
 
       <ContentContainer>
-        <StatusMessage
+        <GenericList
+          items={filteredFiles}
           isLoading={loading}
-          error={error}
-          empty={filteredFiles.length === 0}
           emptyMessage="No se encontraron archivos en la configuración."
-        >
-          <GenericList
-            items={filteredFiles}
-            isLoading={loading}
-            emptyMessage="No se encontraron archivos en la configuración."
-            renderItem={(file) => <FileCard key={file.id} {...file} />}
-          />
-        </StatusMessage>
+          renderItem={(file) => <FileCard key={file.id} {...file} />}
+        />
       </ContentContainer>
 
       <UploadFileModal
