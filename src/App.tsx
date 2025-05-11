@@ -15,13 +15,13 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  return user ? <Navigate to="/gestion-archivos" /> : <>{children}</>;
+  const { token } = useAuth();
+  return token ? <Navigate to="/gestion-archivos" replace /> : <>{children}</>;
 };
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  return user ? <>{children}</> : <Navigate to="/" />;
+  const { token } = useAuth();
+  return token ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 const AppRoutes = () => (
