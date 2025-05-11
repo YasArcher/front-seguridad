@@ -3,6 +3,7 @@ import Button from '../components/ui/Button';
 import StatusMessage from '../components/ui/StatusMessage';
 import AuthLayout from '../layouts/AuthLayout';
 import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../services/authService';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -11,32 +12,39 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    // Validaciones básicas
-    if (!name || !email || !password) {
-      setError('Por favor complete todos los campos');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      await new Promise((res) => setTimeout(res, 1000)); // Simula un registro exitoso
-      navigate('/');
-    } catch (err) {
-      setError('Error al registrar usuario. Por favor intente de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
+   const handleRegister = async () => {
+  if (!name || !email || !password) {
+    setError('Por favor complete todos los campos');
+    return;
+  }
 
-  const handleKeyPress = (e:any) => {
+  if (password !== confirmPassword) {
+    setError('Las contraseñas no coinciden');
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    await registerUser({
+      email: email,
+      password: password,
+      first_name: name.split(' ')[0] || '',
+      last_name: name.split(' ').slice(1).join(' ') || '',
+    });
+    navigate('/');
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+  const handleKeyPress = (e: any) => {
     if (e.key === 'Enter') {
       handleRegister();
     }
@@ -44,12 +52,38 @@ const RegisterPage = () => {
 
   return (
     <AuthLayout>
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-800">Crea tu cuenta</h2>
-        <p className="text-gray-600 mt-2">Completa el formulario para registrarte</p>
-      </div>
-      
+      {/* Modal de Estado */}
       <StatusMessage isLoading={loading} error={error} empty={false}>
+        {showStatusModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white rounded-lg p-8 shadow-lg w-full max-w-md text-center">
+              {loading ? (
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-500"></div>
+                  <p className="mt-4 text-gray-600">Cargando...</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-800 text-lg font-medium">
+                    {error || '¡Operación exitosa!'}
+                  </p>
+                  <button
+                    onClick={() => setShowStatusModal(false)}
+                    className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Aceptar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800">Crea tu cuenta</h2>
+          <p className="text-gray-600 mt-2">Completa el formulario para registrarte</p>
+        </div>
+
         <div className="space-y-4">
           {/* Nombre completo */}
           <div>
