@@ -4,6 +4,7 @@ import StatusMessage from '../components/ui/StatusMessage';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { loginService } from '../services/authService';
 
 
 const LoginPage = () => {
@@ -22,8 +23,8 @@ const LoginPage = () => {
     
     setLoading(true);
     try {
-      await new Promise((res) => setTimeout(res, 1000));
-      login({ name: 'Usuario', email });
+      const data = await loginService(email, password);
+      login({ name: data.user.name, email: data.user.email });
       navigate('/gestion-archivos');
     } catch (err) {
       setError('Credenciales incorrectas. Por favor intente de nuevo.');
