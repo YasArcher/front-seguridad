@@ -25,22 +25,21 @@ interface RegisterData {
 }
 
 export const registerUser = async (data: RegisterData) => {
-  try {
-    const response = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+  const response = await fetch(`${API_URL}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error en el registro');
-    }
+  const responseBody = await response.json();
 
-    return await response.json();
-  } catch (error: any) {
-    throw new Error(error.message);
+  if (!response.ok) {
+    // ✅ Intenta leer 'detail' o 'error' del backend
+    const errorMessage = responseBody.detail || responseBody.error || 'Error en el registro';
+    throw new Error(errorMessage);
   }
+
+  return responseBody;
 };
