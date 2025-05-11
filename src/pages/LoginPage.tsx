@@ -43,7 +43,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await loginService(email, password);
-      // No hacemos navigate, esperamos que llegue el correo con el enlace
+      toast.info("Correo de confirmacion enviado, por favor reviselo")
     } catch (err) {
       toast.error("Credenciales incorrectas. Por favor intente de nuevo.");
     } finally {

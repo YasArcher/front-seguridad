@@ -28,9 +28,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setTokenState(newToken);
   };
 
-  const logout = () => {
-    setToken(null); // Esto limpia el token del estado y localStorage
-  };
+const logout = () => {
+  setToken(null); // Esto limpia tanto el estado como localStorage
+  localStorage.removeItem('token');
+};
+
 
   return (
     <AuthContext.Provider value={{ token, setToken, logout }}>

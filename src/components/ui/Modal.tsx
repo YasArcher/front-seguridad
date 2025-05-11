@@ -17,7 +17,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, footer, size 
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Overlay con animación de fade */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
       

@@ -25,4 +25,39 @@ export const mockUsers = [
     },
   ];
 
+const API_URL = 'http://localhost:5000';
+
+export const getUserProfile = async (token: string) => {
+  const response = await fetch(`${API_URL}/users/profile`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo obtener el perfil del usuario.');
+  }
+
+  return response.json();
+};
+
+export const getAllUsers = async (token: string) => {
+  const response = await fetch(`${API_URL}/auth/admin/users`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo obtener la lista de usuarios.');
+  }
+
+  const data = await response.json();
+  return data.users; // Retorna directamente el array de usuarios
+};
+
   

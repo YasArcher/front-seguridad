@@ -1,24 +1,29 @@
-import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../../Context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../../../Context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 
 // Componente para el menú de perfil mejorado
 const ProfileMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { profile, loading } = useUserProfile();
+
+  const userName = profile
+    ? `${profile.first_name} ${profile.last_name}`
+    : "Usuario";
 
   // Datos de usuario - En un caso real vendrían de un contexto o API
   const user = {
-    name: 'Juan Pérez',
-    avatarUrl: '', // URL de la imagen si existe
+    avatarUrl: "", // URL de la imagen si existe
   };
   const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // Redirige al Login
+    navigate("/"); // Redirige al Login
   };
 
   // Función para alternar el menú
@@ -31,16 +36,18 @@ const ProfileMenu = () => {
         setMenuOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (loading) return <div>Cargando perfil...</div>;
 
   return (
     <div className="relative" ref={menuRef}>
       {/* Botón de perfil */}
-      <button 
-        onClick={toggleMenu} 
+      <button
+        onClick={toggleMenu}
         className="flex items-center gap-2 p-2 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-expanded={menuOpen}
         aria-haspopup="true"
@@ -54,17 +61,21 @@ const ProfileMenu = () => {
           />
         ) : (
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-            {user.name.charAt(0).toUpperCase()}
+            {userName.charAt(0).toUpperCase()}
           </div>
         )}
-        
+
         {/* Nombre del usuario */}
-        <span className="font-medium text-sm dark:text-white hidden sm:inline">{user.name}</span>
-        
+        <span className="font-medium text-sm dark:text-white hidden sm:inline">
+          {userName}
+        </span>
+
         {/* Icono de flecha */}
-        <ChevronDown 
-          size={16} 
-          className={`text-gray-500 transition-transform duration-300 ${menuOpen ? 'rotate-180' : ''}`} 
+        <ChevronDown
+          size={16}
+          className={`text-gray-500 transition-transform duration-300 ${
+            menuOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -83,40 +94,46 @@ const ProfileMenu = () => {
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-                  {user.name.charAt(0).toUpperCase()}
+                  {userName.charAt(0).toUpperCase()}
                 </div>
               )}
-              
+
               {/* Nombre de usuario */}
-              <span className="font-semibold dark:text-white">{user.name}</span>
+              <span className="font-semibold dark:text-white">{userName}</span>
             </div>
           </div>
-          
+
           {/* Opciones del menú */}
           <nav className="py-2">
             {/* Mi Perfil */}
-            <button 
-              onClick={() => console.log('Ver Perfil')}
+            <button
+              onClick={() => console.log("Ver Perfil")}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             >
-              <User size={18} className="mr-3 text-gray-500 dark:text-gray-400" />
+              <User
+                size={18}
+                className="mr-3 text-gray-500 dark:text-gray-400"
+              />
               <span>Mi Perfil</span>
             </button>
-            
+
             {/* Configuración */}
-            <button 
-              onClick={() => console.log('Configuraciones')}
+            <button
+              onClick={() => console.log("Configuraciones")}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             >
-              <Settings size={18} className="mr-3 text-gray-500 dark:text-gray-400" />
+              <Settings
+                size={18}
+                className="mr-3 text-gray-500 dark:text-gray-400"
+              />
               <span>Configuración</span>
             </button>
-            
+
             {/* Separador */}
             <div className="my-2 border-t border-gray-200 dark:border-gray-700"></div>
-            
+
             {/* Cerrar Sesión */}
-            <button 
+            <button
               onClick={handleLogout}
               className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-500 dark:hover:bg-red-900/20 transition-colors duration-200"
             >
