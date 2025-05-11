@@ -1,0 +1,74 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+*.log
+
+# Vite
+.vite/
+.cache/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Misc
+*.tgz
+*.bak
+*.swp
+
+# React specific
+*.env.local
+public/env.js
+
+# Tailwind or PostCSS cache (if used)
+.postcssrc.*
+.tailwind.config.js
+
+# Optional: Ignore compiled static assets
+/static/
+
+# Ignore Storybook builds (if using Storybook)
+storybook-static/
+
+# Optional: Ignore local database or test data
+*.sqlite
+*.db
+*.sqlite3
+
+# Mac specific
+.AppleDouble
+.LSOverride
+
+# Windows specific
+ehthumbs.db
+Icon?
+Desktop.ini
