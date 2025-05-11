@@ -13,7 +13,8 @@ import SuperAdmin from "./pages/SuperAdmin";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
   return token ? <Navigate to="/gestion-archivos" replace /> : <>{children}</>;
@@ -76,6 +77,16 @@ const AppRoutes = () => (
 const App = () => (
   <Router>
     <AppRoutes />
+    <ToastContainer 
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+    />
   </Router>
 );
 
