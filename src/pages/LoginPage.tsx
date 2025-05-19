@@ -12,7 +12,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { setToken } = useAuth();
+  const { setToken, logout } = useAuth(); // Importante: Obtenemos `logout`
 
 
   // Capturar el token desde la URL y limpiar la URL después
@@ -42,7 +42,7 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      await loginService(email, password);
+      await loginService(email, password, logout);
       toast.info("Correo de confirmacion enviado, por favor reviselo")
     } catch (err) {
       toast.error("Credenciales incorrectas. Por favor intente de nuevo.");

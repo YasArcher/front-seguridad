@@ -1,8 +1,8 @@
 export interface UserCardProps {
   name: string;
-  description: string;
   lastLogin: string;
-  downloadCount: string;
+  loginCount: string;
   lastDownload: string;
-  onRemovePermission?: () => void;
+  onPermissionsChange?: (permissions: { state: boolean }) => void;
+  avatarUrl?: string;
 }

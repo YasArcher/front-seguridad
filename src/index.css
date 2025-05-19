@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 10s linear infinite;
+}
+
+@keyframes pingpong {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-50%); } /* Ajusta -50% según el espacio disponible */
+  100% { transform: translateX(0); }
+}
+
+.animate-pingpong {
+  display: inline-block;
+  white-space: nowrap;
+  animation: pingpong 8s linear infinite alternate; /* Lento y de lado a lado */
+}

@@ -8,6 +8,7 @@ interface User {
   lastLogin: string;
   downloadCount: string;
   lastDownload: string;
+  is_active?: boolean;
 }
 
 export const useUsers = (token: string) => {
@@ -20,7 +21,6 @@ export const useUsers = (token: string) => {
       try {
         setLoading(true);
         const apiUsers = await getAllUsers(token);
-        console.log(apiUsers)
         const transformedUsers = apiUsers.map((user: any) => ({
           id: user.id.toString(),
           name: `${user.first_name} ${user.last_name}`,

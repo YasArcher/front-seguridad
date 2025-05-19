@@ -11,5 +11,4 @@ const ContentContainer: FC<ContentContainerProps> = ({ children }) => {
   );
 };
 
-
 export default ContentContainer;

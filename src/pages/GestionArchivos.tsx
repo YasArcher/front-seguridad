@@ -9,7 +9,7 @@ import FileCard from "../components/ui/FileCard";
 
 const GestionArchivos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { files, searchFiles, loading, error } = useFiles();
+  const { files, searchFiles, loading, error } = useFiles('basic', undefined);
 
   const filteredFiles = useMemo(
     () => searchFiles(searchTerm),

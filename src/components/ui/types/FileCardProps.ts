@@ -10,9 +10,7 @@ export interface FileCardProps {
   
   /** Tipo de archivo (pdf, doc, xls, etc.) */
   type: string;
-  
-  /** Descripción corta del archivo */
-  description: string;
+
   
   /** Tamaño del archivo (opcional) */
   size?: string;
@@ -34,7 +32,10 @@ export interface FileCardProps {
   
   /** Función para gestionar usuarios y permisos */
   onUserPermissions?: () => void;
-  
-  /** Función para gestionar la clave de cifrado */
-  onEncryptionKey?: () => void;
+
+  /** Propiedad para mostrar el acceso al archivo */
+  accessType?: 'own' | 'shared';
+
+  /** Función para ver el archivo */
+  onViewKey?: () => void;
 }

@@ -6,12 +6,14 @@ import GenericList from "../components/ui/GenericList";
 import { useState, useEffect } from "react";
 import { useUsers } from "../hooks/useUsers";
 import { toast } from "react-toastify";
+import { useUpdateUserStatus } from "../hooks/useUpdateUserStatus";
 
 const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const token = localStorage.getItem("token") || "";
 
   const { users, searchUsers, loading, error } = useUsers(token);
+  const { updateUserStatus, isUpdating } = useUpdateUserStatus();
 
   const filteredUsers = searchUsers(searchTerm);
 
@@ -30,8 +32,18 @@ const SuperAdmin = () => {
   }, [filteredUsers, loading, searchTerm]);
 
   const handleRemovePermission = (userName: string) => {
-    console.log(`Quitando permiso a ${userName}`);
-    toast.success(`Permiso eliminado para ${userName}.`);
+    // Se voltea el estado del usuario
+    const user = users.find((user) => user.name === userName);
+    if (user) {
+      const newStatus = !user.is_active;
+      updateUserStatus(Number(user.id), newStatus)
+        .then(() => {
+          toast.success(`Permisos de ${userName} actualizados.`);
+        })
+        .catch((err) => {
+          toast.error(`Error al actualizar permisos: ${err}`);
+        });
+    }
   };
 
   return (

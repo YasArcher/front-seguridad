@@ -7,50 +7,41 @@ import UserPermissionsModal from "../components/ui/UserPermissionsModal";
 import Button from "../components/ui/Button";
 import { useFiles } from "../hooks/useFiles";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
-import { mockUsers } from "../services/userService";
+import { useUsers } from "../hooks/useUsers";
 import GenericList from "../components/ui/GenericList";
 import FileCard from "../components/ui/FileCard";
 import { toast } from "react-toastify";
+import { useAuth } from "../Context/AuthContext";
 
 const ConfiguracionArchivos = () => {
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] =
-    useState(false);
+  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileCardProps | null>(null);
 
-  const addCustomActions = useCallback(
-    (file: FileCardProps) => ({
-      ...file,
-      onUserPermissions: () => {
-        setSelectedFile(file);
-        setIsUserPermissionsModalOpen(true);
-      },
-    }),
-    []
-  );
+  // ✅ Memoriza la función para evitar renders infinitos
+  const handleUserPermissions = useCallback((file: FileCardProps) => {
+    setSelectedFile(file);
+    setIsUserPermissionsModalOpen(true);
+  }, []);
 
-  const {
-    files: filesWithActions,
-    searchFiles,
-    loading,
-    error,
-  } = useFiles(addCustomActions);
-  const filteredFiles = searchFiles(searchTerm);
+const { files, searchFiles, loading: loadingFiles, error: filesError } = useFiles("full", handleUserPermissions);
+const filteredFiles = searchFiles(searchTerm);
 
-  // Toast for error
+const { users, searchUsers, loading: loadingUsers, error: usersError } = useUsers(token ?? "");
+const filteredUsers = searchUsers(searchTerm);
+
+
   useEffect(() => {
-    if (error) {
-      toast.error(`Error: ${error}`);
-    }
-  }, [error]);
+    if (filesError) toast.error(`Error: ${filesError}`);
+  }, [filesError]);
 
-  // Toast for empty search result
   useEffect(() => {
-    if (!loading && filteredFiles.length === 0 && searchTerm) {
+    if (!loadingFiles && filteredFiles.length === 0 && searchTerm) {
       toast.info("No se encontraron archivos en la configuración.");
     }
-  }, [filteredFiles, loading, searchTerm]);
+  }, [filteredFiles, loadingFiles, searchTerm]);
 
   const handleAddUser = (userId: string) => {
     console.log(`Añadiendo usuario ${userId} a ${selectedFile?.title}`);
@@ -58,28 +49,13 @@ const ConfiguracionArchivos = () => {
   };
 
   const handleRemoveUser = (userId: string) => {
-    console.log(
-      `Quitando permiso de usuario ${userId} de ${selectedFile?.title}`
-    );
-    toast.info(
-      `Permiso de usuario ${userId} eliminado de ${selectedFile?.title}.`
-    );
+    console.log(`Quitando permiso de usuario ${userId} de ${selectedFile?.title}`);
+    toast.info(`Permiso de usuario ${userId} eliminado de ${selectedFile?.title}.`);
   };
 
   const handleGenerateReport = () => {
     console.log(`Generando informe para ${selectedFile?.title}`);
     toast.success(`Informe generado para ${selectedFile?.title}.`);
-  };
-
-  const handleUploadFile = async (
-    file: File,
-    encryptionKey: string
-  ): Promise<void> => {
-    console.log("Archivo a subir:", file.name);
-    console.log("Clave de cifrado:", encryptionKey);
-    toast.info("Subiendo archivo...");
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-    toast.success("Archivo subido correctamente.");
   };
 
   return (
@@ -98,12 +74,7 @@ const ConfiguracionArchivos = () => {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             }
           />
@@ -118,7 +89,7 @@ const ConfiguracionArchivos = () => {
       <ContentContainer>
         <GenericList
           items={filteredFiles}
-          isLoading={loading}
+          isLoading={loadingFiles}
           emptyMessage="No se encontraron archivos en la configuración."
           renderItem={(file) => <FileCard key={file.id} {...file} />}
         />
@@ -127,7 +98,6 @@ const ConfiguracionArchivos = () => {
       <UploadFileModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUploadFile}
       />
 
       {selectedFile && (
@@ -135,7 +105,10 @@ const ConfiguracionArchivos = () => {
           isOpen={isUserPermissionsModalOpen}
           onClose={() => setIsUserPermissionsModalOpen(false)}
           fileName={selectedFile.title}
-          users={mockUsers}
+          users={filteredUsers.map(user => ({
+            ...user,
+            downloadCount: typeof user.downloadCount === "string" ? Number(user.downloadCount) : user.downloadCount
+          }))}
           onAddUser={handleAddUser}
           onRemoveUser={handleRemoveUser}
           onGenerateReport={handleGenerateReport}

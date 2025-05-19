@@ -12,7 +12,7 @@ interface UserProfile {
 }
 
 export const useUserProfile = () => {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export const useUserProfile = () => {
     const fetchProfile = async () => {
       try {
         if (!token) return;
-        const data = await getUserProfile(token);
+        const data = await getUserProfile(token, logout);
         setProfile(data);
       } catch (err) {
         setError('Error al cargar el perfil.');

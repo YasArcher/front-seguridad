@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "./Context/AuthContext";
@@ -13,60 +14,48 @@ import SuperAdmin from "./pages/SuperAdmin";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Roles } from "./constants/roles";
+
+// Rutas públicas (para usuarios no autenticados)
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
   return token ? <Navigate to="/gestion-archivos" replace /> : <>{children}</>;
 };
 
-const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+// Rutas privadas (requieren autenticación)
+const ProtectedRoute = () => {
   const { token } = useAuth();
-  return token ? <>{children}</> : <Navigate to="/" replace />;
+  return token ? <Outlet /> : <Navigate to="/" replace />;
+};
+
+// Rutas protegidas por rol
+const RoleProtectedRoute = ({ allowedRoles }: { allowedRoles: string[] }) => {
+  const { token, role } = useAuth();
+  if (!token) return <Navigate to="/" replace />;
+  return role && allowedRoles.includes(role) ? <Outlet /> : <Navigate to="/gestion-archivos" replace />;
 };
 
 const AppRoutes = () => (
   <Routes>
     {/* Public Routes */}
-    <Route
-      path="/"
-      element={
-        <PublicRoute>
-          <LoginPage />
-        </PublicRoute>
-      }
-    />
-    <Route
-      path="/register"
-      element={
-        <PublicRoute>
-          <RegisterPage />
-        </PublicRoute>
-      }
-    />
-    <Route
-      path="/forgot-password"
-      element={
-        <PublicRoute>
-          <ForgotPasswordPage />
-        </PublicRoute>
-      }
-    />
+    <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
+    <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+    <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
     {/* Private Routes */}
-    <Route
-      element={
-        <ProtectedRoute>
-          <PrivateLayout />
-        </ProtectedRoute>
-      }
-    >
-      <Route path="/gestion-archivos" element={<GestionArchivos />} />
-      <Route
-        path="/configuracion-archivos"
-        element={<ConfiguracionArchivos />}
-      />
-      <Route path="/usuarios-permitidos" element={<SuperAdmin />} />
+    <Route element={<ProtectedRoute />}>
+      {/* Layout privado para rutas autenticadas */}
+      <Route element={<PrivateLayout />}>
+        <Route path="/gestion-archivos" element={<GestionArchivos />} />
+        <Route path="/configuracion-archivos" element={<ConfiguracionArchivos />} />
+
+        {/* Ruta solo para ADMIN */}
+        <Route element={<RoleProtectedRoute allowedRoles={[Roles.ADMIN]} />}>
+          <Route path="/usuarios-permitidos" element={<SuperAdmin />} />
+        </Route>
+      </Route>
     </Route>
 
     {/* Catch-all Redirect */}
@@ -77,7 +66,7 @@ const AppRoutes = () => (
 const App = () => (
   <Router>
     <AppRoutes />
-    <ToastContainer 
+    <ToastContainer
       position="top-right"
       autoClose={3000}
       hideProgressBar={false}

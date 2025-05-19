@@ -1,19 +1,19 @@
 
 const API_URL = 'http://localhost:5000';
-
-export const loginService = async (email: string, password: string) => {
-  const response = await fetch(`${API_URL}/auth/two-factor/request-2fa`, {
+import { customFetch } from "./customFetch";
+export const loginService = async (email: string, password: string, logout?: () => void) => {
+  const response = await customFetch(`${API_URL}/auth/two-factor/request-2fa`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
-  });
+  }, logout);
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Error en el inicio de sesión.');
   }
 
-  return response.json(); // Aquí esperas que el backend te retorne el token y/o detalles del usuario
+  return response.json();
 };
 
 
@@ -24,22 +24,38 @@ interface RegisterData {
   last_name: string;
 }
 
-export const registerUser = async (data: RegisterData) => {
-  const response = await fetch(`${API_URL}/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+export const registerUser = async (data: RegisterData, logout?: () => void) => {
+  const response = await customFetch(
+    `${API_URL}/register`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     },
-    body: JSON.stringify(data),
-  });
+    logout
+  );
 
   const responseBody = await response.json();
 
   if (!response.ok) {
-    // ✅ Intenta leer 'detail' o 'error' del backend
-    const errorMessage = responseBody.detail || responseBody.error || 'Error en el registro';
+    const errorMessage = responseBody.detail || responseBody.error || 'Error en el registro.';
     throw new Error(errorMessage);
   }
 
   return responseBody;
+};
+
+
+export const logoutService = async (token: string, logout?: () => void) => {
+  const response = await customFetch(`${API_URL}/auth/two-factor/logout`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Error al cerrar sesión.');
+  }
+
+  return response.json();
 };

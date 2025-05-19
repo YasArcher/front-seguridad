@@ -1,11 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import type { ReactNode } from 'react';
-
-interface AuthContextType {
-  token: string | null;
-  setToken: (token: string | null) => void;
-  logout: () => void;
-}
+import type { JwtPayload } from './types/JwtPayload';
+import type { AuthContextType } from './types/AuthContextType';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,14 +25,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setTokenState(newToken);
   };
 
-const logout = () => {
-  setToken(null); // Esto limpia tanto el estado como localStorage
-  localStorage.removeItem('token');
-};
+  const logout = () => {
+    setToken(null);
+  };
 
+  // Calcula el role directamente desde el token en cada render
+  const role = (() => {
+    if (token) {
+      try {
+        const decoded: JwtPayload = jwtDecode(token);
+        return decoded.role || null;
+      } catch (e) {
+        console.error('Error decodificando el token:', e);
+        return null;
+      }
+    }
+    return null;
+  })();
 
   return (
-    <AuthContext.Provider value={{ token, setToken, logout }}>
+    <AuthContext.Provider value={{ token, role, setToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

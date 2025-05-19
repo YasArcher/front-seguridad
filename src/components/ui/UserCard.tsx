@@ -1,76 +1,99 @@
+import { useState, useEffect } from "react";
 import type { FC } from "react";
-import { UserCircle, Download, Calendar } from "lucide-react";
-import Button from "./Button";
+import { UserCircle, Calendar, Eye, Shield, UserX } from "lucide-react";
+import SwitchToggle from "./SwitchToggle";
 import type { UserCardProps } from "./types/UserCardProps";
+import InfoBlock from "./InfoBlock";
 
 const UserCard: FC<UserCardProps> = ({
   name,
-  description,
   lastLogin,
-  downloadCount,
+  loginCount,
   lastDownload,
-  onRemovePermission,
+  avatarUrl,
+  onPermissionsChange,
 }) => {
+  const [state, setState] = useState(false);
+
+  // Notifica cambios en los permisos
+  useEffect(() => {
+    if (onPermissionsChange) {
+      onPermissionsChange({ state });
+    }
+  }, [state, onPermissionsChange]);
+
+  // Gestiona el cambio del permiso de visualización
+  const handleViewChange = (newValue: boolean) => {
+    setState(newValue);
+  };
+
   return (
-    <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow">
-      {/* Avatar o Imagen Placeholder */}
-      <div className="flex items-center justify-center md:mr-6 mb-4 md:mb-0">
-        <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
-          <UserCircle size={48} />
+    <div className="w-full bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 transition-all hover:shadow-lg">
+      {/* Header */}
+      <div className="flex items-center gap-4 p-5 border-b border-gray-100">
+        <div className="flex-shrink-0">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={`${name}'s avatar`}
+              className="h-14 w-14 rounded-full object-cover border-2 border-blue-100"
+            />
+          ) : (
+            <div className="h-14 w-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+              <UserCircle size={32} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold text-gray-800">{name}</h3>
         </div>
       </div>
 
-      {/* Información del Usuario */}
-      <div className="flex-1">
-        <div className="mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">{name}</h3>
-          <p className="text-gray-600 text-sm">{description}</p>
-        </div>
+      <div className="flex flex-col md:flex-row">
+        {/* Información del Usuario */}
+        <div className="flex-1 p-5">
+          <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+            Información de Usuario
+          </h4>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="text-xs text-gray-500 font-medium mb-1">
-              Último inicio de sesión
-            </div>
-            <div className="flex items-center">
-              <Calendar size={16} className="text-gray-400 mr-2" />
-              <span className="text-gray-700">{lastLogin}</span>
-            </div>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <InfoBlock
+              title="Último inicio de sesión"
+              value={lastLogin}
+              icon={<Calendar size={16} className="text-blue-500 mr-2" />}
+            />
 
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="text-xs text-gray-500 font-medium mb-1">
-              Número de descargas
-            </div>
-            <div className="flex items-center">
-              <Download size={16} className="text-gray-400 mr-2" />
-              <span className="text-gray-700">{downloadCount}</span>
-            </div>
-          </div>
+            <InfoBlock
+              title="Número de inicios de sesion antes de acceder"
+              value={loginCount}
+              icon={<UserX size={16} className="text-blue-500 mr-2" />}
+            />
 
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="text-xs text-gray-500 font-medium mb-1">
-              Fecha de la última descarga
-            </div>
-            <div className="flex items-center">
-              <Calendar size={16} className="text-gray-400 mr-2" />
-              <span className="text-gray-700">{lastDownload}</span>
-            </div>
+            <InfoBlock
+              title="Última descarga"
+              value={lastDownload}
+              icon={<Calendar size={16} className="text-blue-500 mr-2" />}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Botón de Quitar Permiso */}
-      <div className="self-center mt-3 md:mt-0 md:ml-4">
-        {/* Botón de Quitar Permiso */}
-        {onRemovePermission && (
-          <Button
-            label="Quitar permiso"
-            variant="danger"
-            size="sm"
-            onClick={onRemovePermission}
-          />
-        )}
+        {/* Permisos */}
+        <div className="border-t md:border-t-0 md:border-l border-gray-100 p-5 bg-gray-50 md:w-64">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield size={16} className="text-blue-500" />
+            <h4 className="text-sm font-medium text-gray-700">Acceso</h4>
+          </div>
+
+          <div className="space-y-1">
+            <SwitchToggle
+              label="Autorizar"
+              icon={<Eye size={16} />}
+              checked={state}
+              onChange={handleViewChange}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -3,11 +3,13 @@ import { useState } from 'react';
 import type { UploadFileModalProps } from './types/UploadFileModalProps';
 import Modal from './Modal';
 import Button from './Button';
+import { useUploadFile } from '../../hooks/useUploadFile';
+import { useAuth } from '../../Context/AuthContext';
 
-const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose, onUpload }) => {
+const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [encryptionKey, setEncryptionKey] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { uploadFile, isLoading, error } = useUploadFile();
+  const { token } = useAuth(); // Obtiene el token desde el contexto de Auth
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -17,16 +19,13 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose, onUpload }
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!selectedFile || !encryptionKey) return;
+    if (!selectedFile || !token) return;
 
-    setIsLoading(true);
-    try {
-      await onUpload(selectedFile, encryptionKey);
+    const result = await uploadFile(selectedFile, token);
+    if (result.success) {
       onClose();
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    } finally {
-      setIsLoading(false);
+    } else {
+      console.error('Error al subir el archivo:', result.error);
     }
   };
 
@@ -41,7 +40,7 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose, onUpload }
             label={isLoading ? 'Subiendo...' : 'Subir archivo'}
             variant="primary"
             onClick={() => handleSubmit()}
-            disabled={isLoading || !selectedFile || !encryptionKey}
+            disabled={isLoading || !selectedFile}
           />
         </>
       }
@@ -96,41 +95,8 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose, onUpload }
             </div>
           </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Clave de cifrado
-          </label>
-          <div className="mt-1 relative rounded-md shadow-sm">
-            <input
-              type="password"
-              value={encryptionKey}
-              onChange={(e) => setEncryptionKey(e.target.value)}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ingrese la clave para cifrar el archivo"
-              required
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-            </div>
-          </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Esta clave será necesaria para acceder al archivo posteriormente.
-          </p>
-        </div>
+        {/* Error Message */}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </form>
     </Modal>
   );

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import SidebarItem from "./SidebarItem";
 import { menuItems } from "../../constants/menuItems";
+import { useSidebarMenu } from "../../hooks/useSidebarMenu";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const sidebarItems = useSidebarMenu();
 
   return (
     <div
@@ -32,7 +34,7 @@ const Sidebar = () => {
       </div>
       {/* Menu items */}
       <div className={`${collapsed ? "p-1" : "p-2"} space-y-1 overflow-y-auto sidebar-scroll`}>
-        {menuItems.map((item) => (
+        {sidebarItems.map((item) => (
           <SidebarItem key={item.id} {...item} collapsed={collapsed} />
         ))}
       </div>

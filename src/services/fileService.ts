@@ -1,49 +1,134 @@
 import pdfIcon from "../assets/pdf.svg";
 import wordIcon from "../assets/word.svg";
 import mp3Icon from "../assets/mp3.svg";
+import defaultIcon from "../assets/defaultIcon.svg";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
+import { customFetch } from "./customFetch";
 
-export const mockFiles: FileCardProps[] = [
-  {
-    id: 1,
-    icon: pdfIcon,
-    title: "Doc",
-    description: "Texto descriptivo del documento PDF.",
-    type: "PDF",
-  },
-  {
-    id: 2,
-    icon: wordIcon,
-    title: "Informe",
-    description: "Texto descriptivo del documento Word.",
-    type: "Word",
-  },
-  {
-    id: 3,
-    icon: mp3Icon,
-    title: "Canción 1",
-    description: "Texto descriptivo de un archivo de música.",
-    type: "MP3",
-  },
-  {
-    id: 4,
-    icon: mp3Icon,
-    title: "Canción 2",
-    description: "Otro archivo de música.",
-    type: "MP3",
-  },
-  {
-    id: 5,
-    icon: mp3Icon,
-    title: "Podcast",
-    description: "Archivo de podcast.",
-    type: "MP3",
-  },
-  {
-    id: 6,
-    icon: mp3Icon,
-    title: "Audio Guía",
-    description: "Guía de audio para la aplicación.",
-    type: "MP3",
-  },
-];
+const API_URL = 'http://localhost:5000/files/';
+
+interface ApiFileResponse {
+  file_id: number;
+  file_name: string;
+  user_id: number;
+  created_at: string;
+  access_type: 'own' | 'shared';
+}
+
+interface FileListResponse {
+  total: number;
+  page: number;
+  per_page: number;
+  files: ApiFileResponse[];
+}
+
+interface ShareFileParams {
+  fileId: string;
+  token: string;
+  targetUserId: number;
+  permissionType: 'download' | 'view' | 'both';
+}
+
+const getFileIcon = (fileName: string): string => {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'pdf': return pdfIcon;
+    case 'docx': return wordIcon;
+    case 'mp3': return mp3Icon;
+    default: return defaultIcon;
+  }
+};
+
+export const getFilesService = async (
+  token: string,
+  page = 1,
+  perPage = 10,
+  actionType: 'basic' | 'full' = 'basic',
+  logout?: () => void
+): Promise<FileCardProps[]> => {
+  const response = await customFetch(`${API_URL}?page=${page}&per_page=${perPage}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Error al obtener la lista de archivos.');
+  }
+
+  const data: FileListResponse = await response.json();
+
+  return data.files.map((file) => {
+    const baseFile: FileCardProps = {
+      id: file.file_id,
+      icon: getFileIcon(file.file_name),
+      title: file.file_name,
+      accessType: file.access_type,
+      type: file.file_name.split('.').pop()?.toUpperCase() || 'FILE',
+      onDownload: () => console.log(`Descargando ${file.file_name}`),
+      onViewKey: () => console.log(`Visualizando ${file.file_name}`),
+    };
+
+    if (actionType === 'full') {
+      return {
+        ...baseFile,
+        onDelete: () => console.log(`Eliminando ${file.file_name}`),
+        onUserPermissions: () => console.log(`Permisos de ${file.file_name}`),
+      };
+    }
+
+    return baseFile;
+  });
+};
+
+export const uploadFileService = async (file: File, token: string, logout?: () => void) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await customFetch(`${API_URL}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  }, logout);
+
+  const responseBody = await response.json();
+
+  return {
+    status: response.status,
+    data: responseBody,
+  };
+};
+
+export const deleteFileService = async (fileId: string, token: string, logout?: () => void): Promise<void> => {
+  const response = await customFetch(`${API_URL}${fileId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Error al eliminar el archivo.');
+  }
+};
+
+export const shareFileService = async (
+  { fileId, token, targetUserId, permissionType }: ShareFileParams,
+  logout?: () => void
+): Promise<void> => {
+  const response = await customFetch(`${API_URL}${fileId}/share`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      target_user_id: targetUserId,
+      permission_type: permissionType,
+    }),
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Error al compartir el archivo.');
+  }
+};
