@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getFilesService, deleteFileService } from "../services/fileService";
+import { getFilesService, deleteFileService, downloadFileService } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";
 import { toast } from "react-toastify";
@@ -13,7 +13,7 @@ export const useFiles = (
   const [files, setFiles] = useState<FileCardProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { token, logout } = useAuth(); // 👈 Inyectamos logout
+  const { token, logout } = useAuth();
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -27,16 +27,33 @@ export const useFiles = (
         const fetchedFiles = await getFilesService(token, 1, 50, actionType, logout);
 
         const filesWithActions = fetchedFiles.map((file) => {
+          const handleDownload = async () => {
+            try {
+              const blob = await downloadFileService(String(file.id), token, logout);
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = file.title; // Usa el nombre original del archivo
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              window.URL.revokeObjectURL(url);
+              toast.success(`Archivo "${file.title}" descargado.`);
+            } catch (e: any) {
+              toast.error(`Error al descargar: ${e.message}`);
+            }
+          };
+
           if (actionType === "full" && onUserPermissionsAction) {
             return {
               ...file,
-              onDownload: () => console.log(`Descargando ${file.title}`),
+              onDownload: handleDownload,
               onViewKey: () => console.log(`Visualizando ${file.title}`),
               onDelete: async () => {
                 try {
                   await deleteFileService(String(file.id), token, logout);
                   toast.success("Archivo eliminado correctamente.");
-                  fetchFiles(); // Recarga la lista de archivos tras eliminar
+                  fetchFiles(); // Recarga la lista tras eliminar
                 } catch (e: any) {
                   toast.error(`Error: ${e.message}`);
                 }
@@ -45,7 +62,10 @@ export const useFiles = (
             };
           }
 
-          return file;
+          return {
+            ...file,
+            onDownload: handleDownload, // ✅ Siempre disponible
+          };
         });
 
         setFiles(filesWithActions);
@@ -57,7 +77,7 @@ export const useFiles = (
     };
 
     fetchFiles();
-  }, [actionType, token, onUserPermissionsAction, logout]); // 👈 Incluye logout en dependencias
+  }, [actionType, token, onUserPermissionsAction, logout]);
 
   const searchFiles = (term: string): FileCardProps[] =>
     files.filter(

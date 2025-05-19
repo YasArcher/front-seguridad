@@ -132,3 +132,23 @@ export const shareFileService = async (
     throw new Error(errorData.message || 'Error al compartir el archivo.');
   }
 };
+
+export const downloadFileService = async (
+  fileId: string,
+  token: string,
+  logout?: () => void
+): Promise<Blob> => {
+  const response = await customFetch(`${API_URL}${fileId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Error al descargar el archivo.");
+  }
+
+  return response.blob(); // ✅ Retorna el archivo como Blob
+};
