@@ -6,6 +6,7 @@ const rutasConSidebar = [
   "/gestion-archivos",
   "/usuarios-permitidos",
   "/configuracion-archivos",
+  "/perfil",
 ];
 
 const PrivateLayout = () => {

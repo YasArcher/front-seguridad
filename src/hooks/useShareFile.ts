@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { shareFileService } from "../services/fileService";
+import {
+  shareFileService,
+  updateShareFileService,
+} from "../services/fileService";
 import { useAuth } from "../Context/AuthContext";
-import { toast } from "react-toastify";
 
 export const useShareFile = () => {
-  const { token, logout } = useAuth(); // 👈 Inyectamos logout
+  const { token, logout } = useAuth();
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +17,6 @@ export const useShareFile = () => {
   ): Promise<boolean> => {
     if (!token) {
       setError("Sesión no válida.");
-      toast.error("Sesión expirada. Inicia sesión nuevamente.");
       return false;
     }
 
@@ -23,19 +24,19 @@ export const useShareFile = () => {
     setError(null);
 
     try {
-      await shareFileService({
-        fileId,
-        token,
-        targetUserId,
-        permissionType,
-      }, logout);
-      toast.success("Archivo compartido exitosamente.");
+      // Intentar compartir
+      await shareFileService({ fileId, token, targetUserId, permissionType }, logout);
       return true;
     } catch (err: any) {
-      const message = err.message || "Error al compartir el archivo.";
-      setError(message);
-      toast.error(message);
-      return false;
+      // Fallback: actualizar permisos si ya está compartido
+      try {
+        await updateShareFileService({ fileId, token, targetUserId, permissionType }, logout);
+        return true;
+      } catch (updateErr: any) {
+        const message = updateErr.message || "Error al actualizar los permisos.";
+        setError(message);
+        return false;
+      }
     } finally {
       setIsSharing(false);
     }

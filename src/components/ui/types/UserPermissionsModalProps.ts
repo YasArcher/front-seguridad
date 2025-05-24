@@ -1,12 +1,6 @@
-export interface User {
-  id: string;
-  name: string;
-  description: string;
-  downloadCount?: number;
-  lastDownload?: string;
-}
-
+import type { User } from "../../../services/Types/User";
 export interface UserPermissionsModalProps {
+  fileId: string;
   isOpen: boolean;
   onClose: () => void;
   fileName: string;

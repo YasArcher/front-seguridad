@@ -53,7 +53,7 @@ export const getFilesService = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Error al obtener la lista de archivos.');
+    throw new Error(errorData.error);
   }
 
   const data: FileListResponse = await response.json();
@@ -107,7 +107,7 @@ export const deleteFileService = async (fileId: string, token: string, logout?: 
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Error al eliminar el archivo.');
+    throw new Error(errorData.error);
   }
 };
 
@@ -115,6 +115,7 @@ export const shareFileService = async (
   { fileId, token, targetUserId, permissionType }: ShareFileParams,
   logout?: () => void
 ): Promise<void> => {
+  console.log('Sharing file:', { fileId, targetUserId, permissionType });
   const response = await customFetch(`${API_URL}${fileId}/share`, {
     method: 'POST',
     headers: {
@@ -129,9 +130,32 @@ export const shareFileService = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Error al compartir el archivo.');
+    throw new Error(errorData.error);
   }
 };
+
+export const updateShareFileService = async (
+  { fileId, token, targetUserId, permissionType }: ShareFileParams,
+  logout?: () => void
+): Promise<void> => {
+  console.log('Updating file share:', { fileId, targetUserId, permissionType });
+  const response = await customFetch(`${API_URL}${fileId}/permissions`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      target_user_id: targetUserId,
+      permission_type: permissionType,
+    }),
+  }, logout);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error);
+  }
+}
 
 export const downloadFileService = async (
   fileId: string,
@@ -147,8 +171,8 @@ export const downloadFileService = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Error al descargar el archivo.");
+    throw new Error(errorData.error);
   }
 
-  return response.blob(); // ✅ Retorna el archivo como Blob
+  return response.blob();
 };

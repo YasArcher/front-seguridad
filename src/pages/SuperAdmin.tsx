@@ -6,15 +6,12 @@ import GenericList from "../components/ui/GenericList";
 import { useState, useEffect } from "react";
 import { useUsers } from "../hooks/useUsers";
 import { toast } from "react-toastify";
-import { useUpdateUserStatus } from "../hooks/useUpdateUserStatus";
 
 const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const token = localStorage.getItem("token") || "";
 
-  const { users, searchUsers, loading, error } = useUsers(token);
-  const { updateUserStatus, isUpdating } = useUpdateUserStatus();
-
+  const { users, searchUsers, loading, error, setUsers } = useUsers(token);
   const filteredUsers = searchUsers(searchTerm);
 
   // Mostrar toast de error si existe
@@ -30,21 +27,6 @@ const SuperAdmin = () => {
       toast.info("No se encontraron usuarios.");
     }
   }, [filteredUsers, loading, searchTerm]);
-
-  const handleRemovePermission = (userName: string) => {
-    // Se voltea el estado del usuario
-    const user = users.find((user) => user.name === userName);
-    if (user) {
-      const newStatus = !user.is_active;
-      updateUserStatus(Number(user.id), newStatus)
-        .then(() => {
-          toast.success(`Permisos de ${userName} actualizados.`);
-        })
-        .catch((err) => {
-          toast.error(`Error al actualizar permisos: ${err}`);
-        });
-    }
-  };
 
   return (
     <div className="flex flex-col flex-1">
@@ -64,12 +46,25 @@ const SuperAdmin = () => {
           renderItem={(user) => (
             <UserCard
               key={user.id}
-              name={user.name}
-              description={user.description}
-              lastLogin={`Último inicio de sesión: ${user.lastLogin}`}
-              downloadCount={`Número de descargas: ${user.downloadCount}`}
-              lastDownload={`Última descarga: ${user.lastDownload}`}
-              onRemovePermission={() => handleRemovePermission(user.name)}
+              id={user.id}
+              name={`${user.first_name} ${user.last_name}`}
+              is_active={user.is_active ?? false}
+              lastLogin={
+                user.created_at
+                  ? new Date(user.created_at).toLocaleDateString()
+                  : "-"
+              }
+              loginCount={"0"}
+              lastDownload={user.last_download ?? "-"}
+              avatarUrl={undefined}
+              // ✅ Actualiza solo el usuario afectado
+              onPermissionsChange={({ state }) => {
+                setUsers((prev) =>
+                  prev.map((u) =>
+                    u.id === user.id ? { ...u, is_active: state } : u
+                  )
+                );
+              }}
             />
           )}
         />

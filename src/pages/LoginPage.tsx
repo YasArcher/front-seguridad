@@ -34,22 +34,23 @@ const LoginPage = () => {
     }
   }, [location.search, navigate, location.pathname]);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      toast.error("Por favor complete todos los campos");
-      return;
-    }
+const handleLogin = async () => {
+  if (!email || !password) {
+    toast.error("Por favor complete todos los campos");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      await loginService(email, password, logout);
-      toast.info("Correo de confirmacion enviado, por favor reviselo")
-    } catch (err) {
-      toast.error("Credenciales incorrectas. Por favor intente de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    await loginService(email, password, logout); // Si fue exitoso, no devuelve error, seguimos
+    toast.info("Correo de confirmación enviado, por favor revíselo");
+  } catch (err: any) {
+    toast.error(err.message || "Error al iniciar sesión");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {

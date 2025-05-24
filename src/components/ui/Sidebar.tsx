@@ -1,6 +1,5 @@
 import { useState } from "react";
 import SidebarItem from "./SidebarItem";
-import { menuItems } from "../../constants/menuItems";
 import { useSidebarMenu } from "../../hooks/useSidebarMenu";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 

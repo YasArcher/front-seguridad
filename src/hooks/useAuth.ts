@@ -18,7 +18,6 @@ export const useAuth = () => {
         await logoutService(token);
       } catch (e) {
         console.warn('Error al cerrar sesión en backend:', e);
-        // Aquí puedes manejar un toast o notificación si lo deseas
       }
     }
 

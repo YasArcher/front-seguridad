@@ -7,35 +7,65 @@ import UserPermissionsModal from "../components/ui/UserPermissionsModal";
 import Button from "../components/ui/Button";
 import { useFiles } from "../hooks/useFiles";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
-import { useUsers } from "../hooks/useUsers";
+import { useFilePermissions } from "../hooks/useFilePermissions";
 import GenericList from "../components/ui/GenericList";
 import FileCard from "../components/ui/FileCard";
 import { toast } from "react-toastify";
-import { useAuth } from "../Context/AuthContext";
+import type { User } from "../services/Types/User";
 
 const ConfiguracionArchivos = () => {
-  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] = useState(false);
+  const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] =
+    useState(false);
   const [selectedFile, setSelectedFile] = useState<FileCardProps | null>(null);
 
-  // ✅ Memoriza la función para evitar renders infinitos
   const handleUserPermissions = useCallback((file: FileCardProps) => {
     setSelectedFile(file);
     setIsUserPermissionsModalOpen(true);
   }, []);
 
-const { files, searchFiles, loading: loadingFiles, error: filesError } = useFiles("full", handleUserPermissions);
-const filteredFiles = searchFiles(searchTerm);
+  const {
+    files,
+    searchFiles,
+    loading: loadingFiles,
+    error: filesError,
+    refresh: refreshFiles,
+  } = useFiles("full", handleUserPermissions);
 
-const { users, searchUsers, loading: loadingUsers, error: usersError } = useUsers(token ?? "");
-const filteredUsers = searchUsers(searchTerm);
+  const filteredFiles = searchFiles(searchTerm);
 
+  const fileId =
+    isUserPermissionsModalOpen && selectedFile?.id
+      ? String(selectedFile.id)
+      : null;
+
+  const {
+    users: fileUsers,
+    searchUsers,
+    loading: loadingUsers,
+    error: usersError,
+  } = useFilePermissions(fileId ?? "");
+
+  const filteredUsers: User[] = searchUsers(searchTerm).map((u) => ({
+    id: u.user_id,
+    first_name: u.first_name,
+    last_name: u.last_name,
+    email: u.email,
+    permission_type: u.permission_type ?? "none",
+    full_name: `${u.first_name} ${u.last_name}`,
+    role: "user",
+    is_active: true,
+    can_upload: false,
+  }));
 
   useEffect(() => {
     if (filesError) toast.error(`Error: ${filesError}`);
   }, [filesError]);
+
+  useEffect(() => {
+    if (usersError) toast.error(`Error: ${usersError}`);
+  }, [usersError]);
 
   useEffect(() => {
     if (!loadingFiles && filteredFiles.length === 0 && searchTerm) {
@@ -44,17 +74,19 @@ const filteredUsers = searchUsers(searchTerm);
   }, [filteredFiles, loadingFiles, searchTerm]);
 
   const handleAddUser = (userId: string) => {
-    console.log(`Añadiendo usuario ${userId} a ${selectedFile?.title}`);
     toast.success(`Usuario ${userId} añadido a ${selectedFile?.title}.`);
   };
 
   const handleRemoveUser = (userId: string) => {
-    console.log(`Quitando permiso de usuario ${userId} de ${selectedFile?.title}`);
-    toast.info(`Permiso de usuario ${userId} eliminado de ${selectedFile?.title}.`);
+    console.log(
+      `Quitando permiso de usuario ${userId} de ${selectedFile?.title}`
+    );
+    toast.info(
+      `Permiso de usuario ${userId} eliminado de ${selectedFile?.title}.`
+    );
   };
 
   const handleGenerateReport = () => {
-    console.log(`Generando informe para ${selectedFile?.title}`);
     toast.success(`Informe generado para ${selectedFile?.title}.`);
   };
 
@@ -74,7 +106,12 @@ const filteredUsers = searchUsers(searchTerm);
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             }
           />
@@ -97,21 +134,26 @@ const filteredUsers = searchUsers(searchTerm);
 
       <UploadFileModal
         isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+
+          refreshFiles();
+        }}
       />
 
       {selectedFile && (
         <UserPermissionsModal
           isOpen={isUserPermissionsModalOpen}
-          onClose={() => setIsUserPermissionsModalOpen(false)}
+          onClose={() => {
+            setIsUserPermissionsModalOpen(false);
+            setSelectedFile(null);
+          }}
           fileName={selectedFile.title}
-          users={filteredUsers.map(user => ({
-            ...user,
-            downloadCount: typeof user.downloadCount === "string" ? Number(user.downloadCount) : user.downloadCount
-          }))}
+          users={filteredUsers}
           onAddUser={handleAddUser}
           onRemoveUser={handleRemoveUser}
           onGenerateReport={handleGenerateReport}
+          fileId={String(selectedFile.id)}
         />
       )}
     </div>

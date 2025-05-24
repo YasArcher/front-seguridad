@@ -3,5 +3,12 @@ export interface UserPermissionCardProps {
   avatarUrl?: string;
   lastDownload?: string;
   downloadCount?: number;
-  onPermissionChange?: (change: { permission: "view" | "download" | "both"; state: boolean }) => void;
+  fileId: string;
+  userId: number;
+  // Callback para manejar cambios en los switches
+  onPermissionChange?: (params: {
+    permission: "view" | "download" | "both" | "none";
+    state: boolean;
+  }) => void;
+  permission_type?: "download" | "view" | "both" | "none";
 }

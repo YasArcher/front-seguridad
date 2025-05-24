@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { getFilesService, deleteFileService, downloadFileService } from "../services/fileService";
+import {
+  getFilesService,
+  deleteFileService,
+  downloadFileService,
+} from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";
-import { toast } from "react-toastify";
 
 type ActionType = "basic" | "full";
 
@@ -15,67 +18,69 @@ export const useFiles = (
   const [error, setError] = useState<string | null>(null);
   const { token, logout } = useAuth();
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      if (!token) {
-        setError("No hay sesión activa.");
-        return;
-      }
+  const fetchFiles = async () => {
+    if (!token) {
+      setError("No hay sesión activa.");
+      return;
+    }
 
-      try {
-        setLoading(true);
-        const fetchedFiles = await getFilesService(token, 1, 50, actionType, logout);
+    try {
+      setLoading(true);
+      const fetchedFiles = await getFilesService(token, 1, 50, actionType, logout);
 
-        const filesWithActions = fetchedFiles.map((file) => {
-          const handleDownload = async () => {
-            try {
-              const blob = await downloadFileService(String(file.id), token, logout);
-              const url = window.URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = file.title; // Usa el nombre original del archivo
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-              window.URL.revokeObjectURL(url);
-              toast.success(`Archivo "${file.title}" descargado.`);
-            } catch (e: any) {
-              toast.error(`Error al descargar: ${e.message}`);
-            }
-          };
+      const filteredFiles = actionType === "full"
+        ? fetchedFiles.filter((file) => file.accessType === "own")
+        : fetchedFiles;
 
-          if (actionType === "full" && onUserPermissionsAction) {
-            return {
-              ...file,
-              onDownload: handleDownload,
-              onViewKey: () => console.log(`Visualizando ${file.title}`),
-              onDelete: async () => {
-                try {
-                  await deleteFileService(String(file.id), token, logout);
-                  toast.success("Archivo eliminado correctamente.");
-                  fetchFiles(); // Recarga la lista tras eliminar
-                } catch (e: any) {
-                  toast.error(`Error: ${e.message}`);
-                }
-              },
-              onUserPermissions: () => onUserPermissionsAction(file),
-            };
+      const filesWithActions = filteredFiles.map((file) => {
+        const handleDownload = async () => {
+          try {
+            const blob = await downloadFileService(String(file.id), token, logout);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = file.title;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (e: any) {
+            setError(`Error al descargar el archivo: ${e.message}`);
           }
+        };
 
+        if (actionType === "full" && onUserPermissionsAction) {
           return {
             ...file,
-            onDownload: handleDownload, // ✅ Siempre disponible
+            onDownload: handleDownload,
+            onViewKey: () => console.log(`Visualizando ${file.title}`),
+            onDelete: async () => {
+              try {
+                await deleteFileService(String(file.id), token, logout);
+                fetchFiles(); // ✅ Vuelve a cargar la lista después de borrar
+              } catch (e: any) {
+                setError(`Error al eliminar el archivo: ${e.message}`);
+              }
+            },
+            onUserPermissions: () => onUserPermissionsAction(file),
           };
-        });
+        }
 
-        setFiles(filesWithActions);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar archivos.");
-      } finally {
-        setLoading(false);
-      }
-    };
+        return {
+          ...file,
+          onDownload: handleDownload,
+        };
+      });
 
+      setFiles(filesWithActions);
+    } catch (err: any) {
+      setError(err.message || "Error al cargar archivos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchFiles();
   }, [actionType, token, onUserPermissionsAction, logout]);
 
@@ -86,5 +91,5 @@ export const useFiles = (
         file.type.toLowerCase().includes(term.toLowerCase())
     );
 
-  return { files, searchFiles, loading, error };
+  return { files, searchFiles, loading, error, refresh: fetchFiles }; // 👈 Exportamos fetchFiles
 };

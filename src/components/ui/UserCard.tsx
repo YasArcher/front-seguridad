@@ -1,30 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { FC } from "react";
 import { UserCircle, Calendar, Eye, Shield, UserX } from "lucide-react";
 import SwitchToggle from "./SwitchToggle";
 import type { UserCardProps } from "./types/UserCardProps";
 import InfoBlock from "./InfoBlock";
+import { useUpdateUserStatus } from "../../hooks/useUpdateUserStatus";
 
 const UserCard: FC<UserCardProps> = ({
+  id,
   name,
   lastLogin,
+  is_active,
   loginCount,
   lastDownload,
   avatarUrl,
   onPermissionsChange,
 }) => {
-  const [state, setState] = useState(false);
+  const [state, setState] = useState<boolean>(is_active); // ✅ Inicializa con is_active solo una vez
+  const { updateUserStatus } = useUpdateUserStatus();
 
-  // Notifica cambios en los permisos
-  useEffect(() => {
-    if (onPermissionsChange) {
-      onPermissionsChange({ state });
+  const handleViewChange = async (newValue: boolean) => {
+    const success = await updateUserStatus(id, newValue);
+    if (success) {
+      setState(newValue); // ✅ actualiza solo el switch
+      if (onPermissionsChange) {
+        onPermissionsChange({ state: newValue }); // solo si necesitas
+      }
     }
-  }, [state, onPermissionsChange]);
-
-  // Gestiona el cambio del permiso de visualización
-  const handleViewChange = (newValue: boolean) => {
-    setState(newValue);
   };
 
   return (
@@ -44,7 +46,6 @@ const UserCard: FC<UserCardProps> = ({
             </div>
           )}
         </div>
-
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-gray-800">{name}</h3>
         </div>
@@ -63,13 +64,11 @@ const UserCard: FC<UserCardProps> = ({
               value={lastLogin}
               icon={<Calendar size={16} className="text-blue-500 mr-2" />}
             />
-
             <InfoBlock
-              title="Número de inicios de sesion antes de acceder"
+              title="Número de inicios de sesión"
               value={loginCount}
               icon={<UserX size={16} className="text-blue-500 mr-2" />}
             />
-
             <InfoBlock
               title="Última descarga"
               value={lastDownload}
@@ -84,12 +83,11 @@ const UserCard: FC<UserCardProps> = ({
             <Shield size={16} className="text-blue-500" />
             <h4 className="text-sm font-medium text-gray-700">Acceso</h4>
           </div>
-
           <div className="space-y-1">
             <SwitchToggle
               label="Autorizar"
               icon={<Eye size={16} />}
-              checked={state}
+              checked={state} // ✅ usa el estado interno
               onChange={handleViewChange}
             />
           </div>

@@ -5,6 +5,8 @@ import Modal from './Modal';
 import Button from './Button';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useAuth } from '../../Context/AuthContext';
+import { toast } from "react-toastify";
+
 
 const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -23,9 +25,10 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
 
     const result = await uploadFile(selectedFile, token);
     if (result.success) {
+      toast.success('Archivo subido exitosamente');
       onClose();
     } else {
-      console.error('Error al subir el archivo:', result.error);
+      toast.error(`Error al subir el archivo: ${result.error}`);
     }
   };
 

@@ -10,7 +10,7 @@ export const loginService = async (email: string, password: string, logout?: () 
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Error en el inicio de sesión.');
+    throw new Error(errorData.error);
   }
 
   return response.json();
@@ -38,7 +38,7 @@ export const registerUser = async (data: RegisterData, logout?: () => void) => {
   const responseBody = await response.json();
 
   if (!response.ok) {
-    const errorMessage = responseBody.detail || responseBody.error || 'Error en el registro.';
+    const errorMessage = responseBody.detail || responseBody.error;
     throw new Error(errorMessage);
   }
 
@@ -54,7 +54,7 @@ export const logoutService = async (token: string, logout?: () => void) => {
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Error al cerrar sesión.');
+    throw new Error(errorData.error);
   }
 
   return response.json();

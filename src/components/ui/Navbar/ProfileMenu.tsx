@@ -26,6 +26,11 @@ const ProfileMenu = () => {
     navigate("/"); // Redirige al Login
   };
 
+  const handleProfileClick = () => {
+    navigate("/perfil");
+    setMenuOpen(false);
+  }
+
   // Función para alternar el menú
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -107,7 +112,7 @@ const ProfileMenu = () => {
           <nav className="py-2">
             {/* Mi Perfil */}
             <button
-              onClick={() => console.log("Ver Perfil")}
+              onClick={handleProfileClick}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             >
               <User
