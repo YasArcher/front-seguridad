@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { useEffect } from "react"; // Si no está importado
 import { useState } from "react";
 import type { UserPermissionsModalProps } from "./types/UserPermissionsModalProps";
 import Modal from "./Modal";
@@ -16,11 +17,15 @@ const UserPermissionsModal: FC<UserPermissionsModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { shareFile } = useShareFile();
-  const filteredUsers = users.filter((user) =>
+  const [userPermissions, setUserPermissions] = useState(users);
+  const filteredUsers = userPermissions.filter((user) =>
     `${user.first_name} ${user.last_name}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+  useEffect(() => {
+  setUserPermissions(users);
+}, [users]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={fileName}>
@@ -47,9 +52,20 @@ const UserPermissionsModal: FC<UserPermissionsModalProps> = ({
                 lastDownload={user.last_download ?? "-"}
                 downloadCount={user.download_count ?? 0}
                 permission_type={user.permission_type}
-                onPermissionChange={({ permission }) => {
-                  if (permission === "none") return;
-                  return shareFile(fileId, user.id, permission);
+                onPermissionChange={async ({ permission }) => {
+                  try {
+                    await shareFile(fileId, user.id, permission);
+                    setUserPermissions((prev) =>
+                      prev.map((u) =>
+                        u.id === user.id
+                          ? { ...u, permission_type: permission }
+                          : u
+                      )
+                    );
+                  } catch (error) {
+                    console.error("Error al actualizar permisos:", error);
+                    // Aquí puedes usar toast para mostrar error
+                  }
                 }}
               />
             ))

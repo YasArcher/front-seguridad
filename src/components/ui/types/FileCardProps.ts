@@ -38,4 +38,8 @@ export interface FileCardProps {
 
   /** Función para ver el archivo */
   onViewKey?: () => void;
+
+  permissionType?: 'view' | 'download' | 'both' | 'full';
+  can_view?: boolean;
+  can_download?: boolean;
 }

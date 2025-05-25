@@ -46,6 +46,7 @@ const ConfiguracionArchivos = () => {
     loading: loadingUsers,
     error: usersError,
   } = useFilePermissions(fileId ?? "");
+  const [canUpload, setCanUpload] = useState(false);
 
   const filteredUsers: User[] = searchUsers(searchTerm).map((u) => ({
     id: u.user_id,
@@ -73,6 +74,10 @@ const ConfiguracionArchivos = () => {
     }
   }, [filteredFiles, loadingFiles, searchTerm]);
 
+  useEffect(() => {
+    setCanUpload(getCanUploadFromToken());
+  }, []);
+
   const handleAddUser = (userId: string) => {
     toast.success(`Usuario ${userId} añadido a ${selectedFile?.title}.`);
   };
@@ -90,31 +95,48 @@ const ConfiguracionArchivos = () => {
     toast.success(`Informe generado para ${selectedFile?.title}.`);
   };
 
+  const getCanUploadFromToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return false;
+
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      return decodedPayload.can_upload === true;
+    } catch (error) {
+      console.error("Error decodificando el token JWT:", error);
+      return false;
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <PageHeader title="Configuración de Archivos">
         <div className="flex gap-2 items-center">
-          <Button
-            label="Añadir"
-            onClick={() => setIsUploadModalOpen(true)}
-            variant="primary"
-            iconLeft={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            }
-          />
+          {canUpload && (
+            <Button
+              label="Añadir"
+              onClick={() => setIsUploadModalOpen(true)}
+              variant="primary"
+              iconLeft={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              }
+            />
+          )}
+
           <SearchBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}

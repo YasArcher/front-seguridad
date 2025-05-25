@@ -5,7 +5,7 @@ import defaultIcon from "../assets/defaultIcon.svg";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { customFetch } from "./customFetch";
 
-const API_URL = 'http://localhost:5000/files/';
+const API_URL = 'https://localhost/files/';
 
 interface ApiFileResponse {
   file_id: number;
@@ -13,6 +13,9 @@ interface ApiFileResponse {
   user_id: number;
   created_at: string;
   access_type: 'own' | 'shared';
+  can_view: boolean;
+  can_download: boolean;
+  permission_type: 'view' | 'download' | 'both' | 'full';
 }
 
 interface FileListResponse {
@@ -26,7 +29,7 @@ interface ShareFileParams {
   fileId: string;
   token: string;
   targetUserId: number;
-  permissionType: 'download' | 'view' | 'both';
+  permissionType: 'download' | 'view' | 'both' | 'none';
 }
 
 const getFileIcon = (fileName: string): string => {
@@ -42,7 +45,7 @@ const getFileIcon = (fileName: string): string => {
 export const getFilesService = async (
   token: string,
   page = 1,
-  perPage = 10,
+  perPage = 9999,
   actionType: 'basic' | 'full' = 'basic',
   logout?: () => void
 ): Promise<FileCardProps[]> => {
@@ -65,8 +68,9 @@ export const getFilesService = async (
       title: file.file_name,
       accessType: file.access_type,
       type: file.file_name.split('.').pop()?.toUpperCase() || 'FILE',
-      onDownload: () => console.log(`Descargando ${file.file_name}`),
-      onViewKey: () => console.log(`Visualizando ${file.file_name}`),
+      can_view: file.can_view,
+      can_download: file.can_download,
+      permissionType: file.permission_type,
     };
 
     if (actionType === 'full') {
@@ -172,6 +176,28 @@ export const downloadFileService = async (
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error);
+  }
+
+  return response.blob();
+};
+
+export const viewFileService = async (
+  fileId: string,
+  token: string,
+  logout?: () => void
+): Promise<Blob> => {
+  const response = await fetch(`${API_URL}${fileId}/view`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  console.log("✅ Headers del archivo:", response.headers.get("Content-Type"));
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    if (logout) logout();
+    throw new Error(errorData.error || "Error al obtener el archivo para ver.");
   }
 
   return response.blob();

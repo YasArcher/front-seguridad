@@ -13,7 +13,7 @@ export const useShareFile = () => {
   const shareFile = async (
     fileId: string,
     targetUserId: number,
-    permissionType: "download" | "view" | "both"
+    permissionType: "download" | "view" | "both" | "none",
   ): Promise<boolean> => {
     if (!token) {
       setError("Sesión no válida.");

@@ -6,24 +6,44 @@ import ContentContainer from "../components/ui/ContentContainer";
 import { useFiles } from "../hooks/useFiles";
 import { toast } from "react-toastify";
 import FileCard from "../components/ui/FileCard";
+import DocumentViewerModal from "../components/ui/DocumentViewerModal";
 
 const GestionArchivos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { files, searchFiles, loading, error } = useFiles('basic', undefined);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState<string | null>(null); // Nuevo estado para MIME
+
+  const handleViewFile = (
+    blob: Blob,
+    file: { title: string },
+    mime: string
+  ) => {
+    const url = URL.createObjectURL(blob);
+    setFileUrl(url);
+    setFileName(file.title);
+    setMimeType(mime); // Guardar el tipo MIME
+    setIsViewerOpen(true);
+  };
+
+  const { files, searchFiles, loading, error } = useFiles(
+    "basic",
+    undefined,
+    handleViewFile
+  );
 
   const filteredFiles = useMemo(
     () => searchFiles(searchTerm),
     [searchTerm, searchFiles]
   );
 
-  // Mostrar toast de error
   useEffect(() => {
     if (error) {
       toast.error(`Error: ${error}`);
     }
   }, [error]);
 
-  // Mostrar toast si no hay resultados
   useEffect(() => {
     if (!loading && filteredFiles.length === 0 && searchTerm) {
       toast.info("No hay archivos que coincidan con la búsqueda.");
@@ -50,6 +70,18 @@ const GestionArchivos = () => {
           renderItem={(file) => <FileCard key={file.id} {...file} />}
         />
       </ContentContainer>
+      <DocumentViewerModal
+        isOpen={isViewerOpen}
+        onClose={() => {
+          setIsViewerOpen(false);
+          if (fileUrl) URL.revokeObjectURL(fileUrl);
+          setFileUrl(null);
+          setMimeType(null);
+        }}
+        fileUrl={fileUrl || ""}
+        fileName={fileName || "Documento"}
+        mimeType={mimeType || ""}
+      />
     </div>
   );
 };

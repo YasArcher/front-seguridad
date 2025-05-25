@@ -15,6 +15,8 @@ const FileCard: FC<FileCardProps> = ({
   onUserPermissions,
   onViewKey,
   className = "",
+  can_download,
+  can_view,
 }) => {
   // Iconos para los botones (puedes reemplazarlos con tus propios iconos)
   const DownloadIcon = () => (
@@ -128,7 +130,6 @@ const FileCard: FC<FileCardProps> = ({
         return "border-gray-200";
     }
   };
-
   return (
     <div
       className={`flex flex-col md:flex-row gap-4 p-5 bg-white border-l-4 ${getBorderColor()} rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 ${className}`}
@@ -188,7 +189,7 @@ const FileCard: FC<FileCardProps> = ({
         <div className="flex flex-wrap gap-2 mt-4">
           {/* Grupo de botones principales */}
           <div className="flex flex-wrap gap-2">
-            {onDownload && (
+            {onDownload && can_download && (
               <Button
                 label="Descargar"
                 variant="primary"
@@ -225,7 +226,7 @@ const FileCard: FC<FileCardProps> = ({
                 rounded="md"
               />
             )}
-            {onViewKey && (
+            {onViewKey && can_view && (
               <Button
                 label="Ver"
                 variant="outline"

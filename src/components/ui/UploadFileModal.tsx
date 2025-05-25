@@ -28,7 +28,7 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
       toast.success('Archivo subido exitosamente');
       onClose();
     } else {
-      toast.error(`Error al subir el archivo: ${result.error}`);
+      toast.error(`Error al subir el archivo: ${error}`);
     }
   };
 

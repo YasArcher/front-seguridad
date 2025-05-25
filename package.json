@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.9.0",
+    "fs": "^0.0.1-security",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.509.0",
     "react": "^19.1.0",
@@ -25,6 +26,7 @@
     "@tailwindcss/vite": "^4.1.6",
     "@types/axios": "^0.9.36",
     "@types/jwt-decode": "^2.2.1",
+    "@types/node": "^22.15.21",
     "@types/react": "^19.1.3",
     "@types/react-dom": "^19.1.3",
     "@vitejs/plugin-react": "^4.4.1",

@@ -1,5 +1,5 @@
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'https://localhost';
 import { customFetch } from "./customFetch";
 export const loginService = async (email: string, password: string, logout?: () => void) => {
   const response = await customFetch(`${API_URL}/auth/two-factor/request-2fa`, {

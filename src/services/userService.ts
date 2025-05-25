@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000";
+const API_URL = "https://localhost";
 import { customFetch } from "./customFetch";
 import type { User } from "./Types/User";
 // Interfaces
@@ -88,7 +88,7 @@ export const getFilePermissionsByUsers = async (
   fileId: string,
   token: string
 ): Promise<FilePermissionResponse> => {
-  const response = await fetch(`http://localhost:5000/files/${fileId}/permissions/users`, {
+  const response = await fetch(`https://localhost/files/${fileId}/permissions/users`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

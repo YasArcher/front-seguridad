@@ -5,6 +5,7 @@ import SwitchToggle from "./SwitchToggle";
 import type { UserCardProps } from "./types/UserCardProps";
 import InfoBlock from "./InfoBlock";
 import { useUpdateUserStatus } from "../../hooks/useUpdateUserStatus";
+import { toast } from "react-toastify";
 
 const UserCard: FC<UserCardProps> = ({
   id,
@@ -17,15 +18,19 @@ const UserCard: FC<UserCardProps> = ({
   onPermissionsChange,
 }) => {
   const [state, setState] = useState<boolean>(is_active); // ✅ Inicializa con is_active solo una vez
-  const { updateUserStatus } = useUpdateUserStatus();
+  const { updateUserStatus, error } = useUpdateUserStatus();
 
   const handleViewChange = async (newValue: boolean) => {
     const success = await updateUserStatus(id, newValue);
     if (success) {
       setState(newValue); // ✅ actualiza solo el switch
+      toast.success(`Permisos actualizados para ${name}`);
       if (onPermissionsChange) {
         onPermissionsChange({ state: newValue }); // solo si necesitas
       }
+    }
+    else {
+      toast.error(`Error al actualizar permisos: ${error}`);
     }
   };
 
