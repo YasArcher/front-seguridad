@@ -10,6 +10,7 @@ import { useUpdateUserProfile } from "../hooks/useUpdateUserProfile.ts";
 
 const UserProfilePage = () => {
   const { profile, loading, error, refetch } = useUserProfile();
+  // @ts-ignore
   const { updateProfile, loading: updating } = useUpdateUserProfile();
 
   const [editMode, setEditMode] = useState(false);

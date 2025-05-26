@@ -3,6 +3,7 @@ import {
   getFilesService,
   deleteFileService,
   downloadFileService,
+  // @ts-ignore
   viewFileService,
 } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";

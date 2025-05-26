@@ -1,6 +1,5 @@
 const API_URL = "https://localhost";
 import { customFetch } from "./customFetch";
-import type { User } from "./Types/User";
 // Interfaces
 interface UpdateUserStatusParams {
   id: number;

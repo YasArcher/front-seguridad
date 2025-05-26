@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const token = localStorage.getItem("token") || "";
-
+// @ts-ignore
   const { users, searchUsers, loading, error, setUsers } = useUsers(token);
   const filteredUsers = searchUsers(searchTerm);
 

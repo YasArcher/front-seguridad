@@ -26,6 +26,7 @@ const ConfiguracionArchivos = () => {
   }, []);
 
   const {
+    // @ts-ignore
     files,
     searchFiles,
     loading: loadingFiles,
@@ -41,8 +42,10 @@ const ConfiguracionArchivos = () => {
       : null;
 
   const {
+    // @ts-ignore
     users: fileUsers,
     searchUsers,
+    // @ts-ignore
     loading: loadingUsers,
     error: usersError,
   } = useFilePermissions(fileId ?? "");

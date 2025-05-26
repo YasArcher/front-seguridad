@@ -26,7 +26,7 @@ const GestionArchivos = () => {
     setMimeType(mime); // Guardar el tipo MIME
     setIsViewerOpen(true);
   };
-
+// @ts-ignore
   const { files, searchFiles, loading, error } = useFiles(
     "basic",
     undefined,

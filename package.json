@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "obfuscate": "javascript-obfuscator ./src --output ./dist --config obfuscator-config.json"
   },
   "dependencies": {
+    "@react-pdf-viewer/core": "^3.12.0",
+    "@react-pdf-viewer/default-layout": "^3.12.0",
     "axios": "^1.9.0",
     "fs": "^0.0.1-security",
     "jwt-decode": "^4.0.0",
@@ -34,6 +37,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "javascript-obfuscator": "^4.1.1",
     "tailwindcss": "^4.1.6",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
