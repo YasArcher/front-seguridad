@@ -95,43 +95,75 @@ class AES128 {
   }
 
   private static mixColumns(state: State): State {
-    for (let c = 0; c < 4; c++) {
-      const a = state.map((row) => row[c]);
-      const b = a.map((v) => (v & 0x80 ? (v << 1) ^ 0x1b : v << 1) & 0xff);
-      state[0][c] = b[0] ^ a[1] ^ b[1] ^ a[2] ^ a[3];
-      state[1][c] = a[0] ^ b[1] ^ a[2] ^ b[2] ^ a[3];
-      state[2][c] = a[0] ^ a[1] ^ b[2] ^ a[3] ^ b[3];
-      state[3][c] = a[0] ^ b[0] ^ a[1] ^ a[2] ^ b[3];
-    }
-    return state;
-  }
+  const multiplyBy2 = (v: number) => (v & 0x80 ? ((v << 1) ^ 0x1B) & 0xFF : (v << 1) & 0xFF);
+  const multiplyBy3 = (v: number) => multiplyBy2(v) ^ v;
 
-  private static invMixColumns(state: State): State {
-    const mul = (a: number, b: number): number => {
-      let p = 0;
-      for (let i = 0; i < 8; i++) {
-        if (b & 1) p ^= a;
-        let hiBit = a & 0x80;
-        a = (a << 1) & 0xff;
-        if (hiBit) a ^= 0x1b;
-        b >>= 1;
+  const mixColumnsMatrix = [
+    [2, 3, 1, 1],
+    [1, 2, 3, 1],
+    [1, 1, 2, 3],
+    [3, 1, 1, 2]
+  ];
+
+  for (let row = 0; row < 4; row++) {
+    const originalRow = [...state[row]];
+
+    for (let col = 0; col < 4; col++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) {
+        const messageByte = originalRow[k];
+        const mixValue = mixColumnsMatrix[k][col];
+
+        let product = 0;
+        if (mixValue === 1) product = messageByte;
+        else if (mixValue === 2) product = multiplyBy2(messageByte);
+        else if (mixValue === 3) product = multiplyBy3(messageByte);
+
+        sum ^= product;
       }
-      return p;
-    };
-
-    for (let c = 0; c < 4; c++) {
-      const a = state.map((row) => row[c]);
-      state[0][c] =
-        mul(a[0], 0x0e) ^ mul(a[1], 0x0b) ^ mul(a[2], 0x0d) ^ mul(a[3], 0x09);
-      state[1][c] =
-        mul(a[0], 0x09) ^ mul(a[1], 0x0e) ^ mul(a[2], 0x0b) ^ mul(a[3], 0x0d);
-      state[2][c] =
-        mul(a[0], 0x0d) ^ mul(a[1], 0x09) ^ mul(a[2], 0x0e) ^ mul(a[3], 0x0b);
-      state[3][c] =
-        mul(a[0], 0x0b) ^ mul(a[1], 0x0d) ^ mul(a[2], 0x09) ^ mul(a[3], 0x0e);
+      state[row][col] = sum;
     }
-    return state;
   }
+  return state;
+}
+
+private static invMixColumns(state: State): State {
+  const mul = (a: number, b: number): number => {
+    let p = 0;
+    for (let i = 0; i < 8; i++) {
+      if (b & 1) p ^= a;
+      let hiBit = a & 0x80;
+      a = (a << 1) & 0xff;
+      if (hiBit) a ^= 0x1b;
+      b >>= 1;
+    }
+    return p;
+  };
+
+  const invMixColumnsMatrix = [
+    [0x0e, 0x0b, 0x0d, 0x09],
+    [0x09, 0x0e, 0x0b, 0x0d],
+    [0x0d, 0x09, 0x0e, 0x0b],
+    [0x0b, 0x0d, 0x09, 0x0e]
+  ];
+
+  for (let row = 0; row < 4; row++) {
+    const originalRow = [...state[row]]; // Copia la fila del mensaje
+
+    for (let col = 0; col < 4; col++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) {
+        const messageByte = originalRow[k];
+        const invMixValue = invMixColumnsMatrix[k][col]; // Columna de la matriz inversa
+
+        sum ^= mul(messageByte, invMixValue);
+      }
+      state[row][col] = sum;
+    }
+  }
+
+  return state;
+}
 
   private static bytesToState(block: Uint8Array): State {
     const state: State = [[], [], [], []];
