@@ -52,51 +52,6 @@ class AES128 {
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63,
     0x55, 0x21, 0x0c, 0x7d,
   ];
-  private static readonly RCON: number[][] = [
-    [0x00, 0x00, 0x00, 0x00],
-    [0x01, 0x00, 0x00, 0x00],
-    [0x02, 0x00, 0x00, 0x00],
-    [0x04, 0x00, 0x00, 0x00],
-    [0x08, 0x00, 0x00, 0x00],
-    [0x10, 0x00, 0x00, 0x00],
-    [0x20, 0x00, 0x00, 0x00],
-    [0x40, 0x00, 0x00, 0x00],
-    [0x80, 0x00, 0x00, 0x00],
-    [0x1b, 0x00, 0x00, 0x00],
-    [0x36, 0x00, 0x00, 0x00],
-  ];
-
-  private static subWord(word: Word): Word {
-    return word.map((b) => AES128.SBOX[b]);
-  }
-
-  private static rotWord(word: Word): Word {
-    return [word[1], word[2], word[3], word[0]];
-  }
-
-  private static keyExpansion(key: number[]): number[][] {
-    const expandedKey: number[][] = [];
-    const Nk = 4,
-      Nb = 4,
-      Nr = 10;
-    for (let i = 0; i < Nk; i++) {
-      expandedKey[i] = [
-        key[4 * i],
-        key[4 * i + 1],
-        key[4 * i + 2],
-        key[4 * i + 3],
-      ];
-    }
-    for (let i = Nk; i < Nb * (Nr + 1); i++) {
-      let temp = [...expandedKey[i - 1]];
-      if (i % Nk === 0) {
-        temp = AES128.subWord(AES128.rotWord(temp));
-        temp = temp.map((b, j) => b ^ AES128.RCON[i / Nk][j]);
-      }
-      expandedKey[i] = expandedKey[i - Nk].map((b, j) => b ^ temp[j]);
-    }
-    return expandedKey;
-  }
 
   private static addRoundKey(state: State, roundKey: number[]): State {
     for (let c = 0; c < 4; c++) {
@@ -213,63 +168,74 @@ class AES128 {
       .map((c) => c.charCodeAt(0));
   }
 
-  public static encrypt(data: Uint8Array): Uint8Array {
-    //clave desde .env
-    const key = keyAES;
-    const keyBytes = AES128.normalizeKey(key);
-    const roundKeys = AES128.keyExpansion(keyBytes);
-    const paddedData = AES128.pad(data);
-    const result = new Uint8Array(paddedData.length);
+public static encrypt(data: Uint8Array): Uint8Array {
+  // Clave leída desde .env
+  const key = keyAES;
+  const keyBytes = AES128.normalizeKey(key); // Normaliza la clave a 16 bytes
+  const paddedData = AES128.pad(data); // Aplica padding PKCS#7
+  const result = new Uint8Array(paddedData.length);
 
-    for (let i = 0; i < paddedData.length; i += 16) {
-      let state = AES128.bytesToState(paddedData.slice(i, i + 16));
-      state = AES128.addRoundKey(state, roundKeys[0].flat());
+  for (let i = 0; i < paddedData.length; i += 16) {
+    let state = AES128.bytesToState(paddedData.slice(i, i + 16));
 
-      for (let round = 1; round < 10; round++) {
-        state = AES128.subBytes(state);
-        state = AES128.shiftRows(state);
-        state = AES128.mixColumns(state);
-        state = AES128.addRoundKey(state, roundKeys[round].flat());
-      }
+    // AddRoundKey inicial (Round 0)
+    state = AES128.addRoundKey(state, keyBytes);
 
+    // Rondas 1-9 (siempre usando la misma clave)
+    for (let round = 1; round < 10; round++) {
       state = AES128.subBytes(state);
       state = AES128.shiftRows(state);
-      state = AES128.addRoundKey(state, roundKeys[10].flat());
+      state = AES128.mixColumns(state);
+      state = AES128.addRoundKey(state, keyBytes);
+    }
+
+    // Última ronda (Round 10)
+    state = AES128.subBytes(state);
+    state = AES128.shiftRows(state);
+    state = AES128.addRoundKey(state, keyBytes);
+
+    result.set(AES128.stateToBytes(state), i);
+  }
+
+  return result;
+}
+
+
+public static decrypt(data: Uint8Array): Uint8Array {
+  try {
+    const key = keyAES;
+    const keyBytes = AES128.normalizeKey(key); // Clave fija de 16 bytes
+    const result = new Uint8Array(data.length);
+
+    for (let i = 0; i < data.length; i += 16) {
+      let state = AES128.bytesToState(data.slice(i, i + 16));
+
+      // AddRoundKey inicial (última clave)
+      state = AES128.addRoundKey(state, keyBytes); // 🔑 Usamos la misma clave
+
+      // Rondas 9 a 1
+      for (let round = 9; round > 0; round--) {
+        state = AES128.invShiftRows(state);
+        state = AES128.invSubBytes(state);
+        state = AES128.addRoundKey(state, keyBytes); // 🔑 Mismo XOR en todas las rondas
+        state = AES128.invMixColumns(state);
+      }
+
+      // Última ronda
+      state = AES128.invShiftRows(state);
+      state = AES128.invSubBytes(state);
+      state = AES128.addRoundKey(state, keyBytes); // 🔑 Mismo XOR final
+
       result.set(AES128.stateToBytes(state), i);
     }
 
-    return result;
+    return AES128.unpad(result);
+  } catch (error) {
+    console.error("Error during decryption:", error);
+    throw new Error("Decryption failed");
   }
+}
 
-  public static decrypt(data: Uint8Array): Uint8Array {
-    try {
-      const key = keyAES;
-      const keyBytes = AES128.normalizeKey(key);
-      const roundKeys = AES128.keyExpansion(keyBytes);
-      const result = new Uint8Array(data.length);
-
-      for (let i = 0; i < data.length; i += 16) {
-        let state = AES128.bytesToState(data.slice(i, i + 16));
-        state = AES128.addRoundKey(state, roundKeys[10].flat());
-
-        for (let round = 9; round > 0; round--) {
-          state = AES128.invShiftRows(state);
-          state = AES128.invSubBytes(state);
-          state = AES128.addRoundKey(state, roundKeys[round].flat());
-          state = AES128.invMixColumns(state);
-        }
-
-        state = AES128.invShiftRows(state);
-        state = AES128.invSubBytes(state);
-        state = AES128.addRoundKey(state, roundKeys[0].flat());
-        result.set(AES128.stateToBytes(state), i);
-      }
-      return AES128.unpad(result);
-    } catch (error) {
-      console.error("Error during decryption:", error);
-      throw new Error("Decryption failed");
-    }
-  }
 }
 
 export { AES128 };

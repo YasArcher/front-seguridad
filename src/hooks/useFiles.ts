@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   getFilesService,
   deleteFileService,
-  downloadFileService,
 } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";

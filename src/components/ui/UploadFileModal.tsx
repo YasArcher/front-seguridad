@@ -29,6 +29,13 @@ const handleSubmit = async (e?: React.FormEvent) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
+
+    //Asi se enviuan cadenas a cifrar
+    // const encoder = new TextEncoder();
+    // const data = encoder.encode("software123");
+    // const encryptedString = await encrypt(data);
+    // console.log("Encrypted:", encryptedString);
+
     const encryptedData = await encrypt(uint8Array);
     if (!encryptedData) {
       toast.error("Error: "+errorAes);

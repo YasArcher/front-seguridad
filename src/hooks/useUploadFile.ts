@@ -20,11 +20,6 @@ export const useUploadFile = () => {
     try {
       const { status, data } = await uploadFileService(file, token, logout);
 
-      if (status === 401) {
-        logout();
-        return { success: false, error: 'Sesión expirada. Inicia sesión nuevamente.' };
-      }
-
       if (status >= 200 && status < 300) {
         return { success: true, data };
       } else {
