@@ -6,12 +6,14 @@ import Button from './Button';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useAuth } from '../../Context/AuthContext';
 import { toast } from "react-toastify";
+import { useAES } from '../../hooks/useAES';
 
 
 const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { uploadFile, isLoading, error } = useUploadFile();
   const { token } = useAuth(); // Obtiene el token desde el contexto de Auth
+  const { encrypt } = useAES();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {

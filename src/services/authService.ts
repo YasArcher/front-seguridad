@@ -1,5 +1,5 @@
 
-const API_URL = 'https://localhost';
+const API_URL = 'httpS://localhost';
 import { customFetch } from "./customFetch";
 export const loginService = async (email: string, password: string, logout?: () => void) => {
   const response = await customFetch(`${API_URL}/auth/two-factor/request-2fa`, {
@@ -58,4 +58,24 @@ export const logoutService = async (token: string, logout?: () => void) => {
   }
 
   return response.json();
+};
+
+export const getFileActionsAuditService = async (
+  fileId: number | string,
+  token: string,
+  logout?: () => void
+) => {
+  const response = await customFetch(`${API_URL}/audit/file-actions?file_id=${fileId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }, logout);
+
+  const responseBody = await response.json();
+
+  return {
+    status: response.status,
+    data: responseBody,
+  };
 };

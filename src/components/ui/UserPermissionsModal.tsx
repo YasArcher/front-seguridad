@@ -14,6 +14,8 @@ const UserPermissionsModal: FC<UserPermissionsModalProps> = ({
   fileName,
   users,
   fileId,
+  lastDownload,
+  downloadCount,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { shareFile } = useShareFile();
@@ -49,8 +51,8 @@ const UserPermissionsModal: FC<UserPermissionsModalProps> = ({
                 userId={user.id}
                 name={`${user.first_name} ${user.last_name}`}
                 avatarUrl="https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png"
-                lastDownload={user.last_download ?? "-"}
-                downloadCount={user.download_count ?? 0}
+                lastDownload={lastDownload}
+                downloadCount={downloadCount}
                 permission_type={user.permission_type}
                 onPermissionChange={async ({ permission }) => {
                   try {

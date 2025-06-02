@@ -13,24 +13,36 @@ const GestionArchivos = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [mimeType, setMimeType] = useState<string | null>(null); // Nuevo estado para MIME
+  const [mimeType, setMimeType] = useState<string | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
 
-  const handleViewFile = (
+  const handleViewFile = async (
     blob: Blob,
     file: { title: string },
     mime: string
   ) => {
+    setIsViewerOpen(true);
+    setViewerLoading(true);
+
     const url = URL.createObjectURL(blob);
     setFileUrl(url);
     setFileName(file.title);
-    setMimeType(mime); // Guardar el tipo MIME
-    setIsViewerOpen(true);
+    setMimeType(mime);
   };
-// @ts-ignore
+  const handleBeforeViewFile = (file: { title: string }) => {
+    setFileName(file.title);
+    setMimeType(null);
+    setFileUrl(null);
+    setIsViewerOpen(true);
+    setViewerLoading(true);
+  };
+
+  // @ts-ignore
   const { files, searchFiles, loading, error } = useFiles(
     "basic",
     undefined,
-    handleViewFile
+    handleViewFile,
+    handleBeforeViewFile
   );
 
   const filteredFiles = useMemo(
@@ -74,6 +86,7 @@ const GestionArchivos = () => {
         isOpen={isViewerOpen}
         onClose={() => {
           setIsViewerOpen(false);
+          setViewerLoading(false); // 👈 Reiniciamos
           if (fileUrl) URL.revokeObjectURL(fileUrl);
           setFileUrl(null);
           setMimeType(null);

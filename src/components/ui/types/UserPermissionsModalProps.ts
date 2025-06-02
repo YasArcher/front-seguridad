@@ -8,4 +8,6 @@ export interface UserPermissionsModalProps {
   onAddUser: (userId: string) => void;
   onRemoveUser: (userId: string) => void;
   onGenerateReport: () => void;
+  lastDownload: string;
+  downloadCount: number;
 }

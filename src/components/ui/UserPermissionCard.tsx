@@ -68,7 +68,13 @@ const UserPermissionCard: FC<UserPermissionCardProps> = ({
                 {lastDownload && (
                   <InfoBlock
                     title="Última descarga"
-                    value={lastDownload}
+                    value={new Date(lastDownload).toLocaleString("es-EC", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                     icon={<Calendar className="w-4 h-4 text-green-500 mr-2" />}
                   />
                 )}

@@ -5,7 +5,9 @@ import SwitchToggle from "./SwitchToggle";
 import type { UserCardProps } from "./types/UserCardProps";
 import InfoBlock from "./InfoBlock";
 import { useUpdateUserStatus } from "../../hooks/useUpdateUserStatus";
+import Button from "./Button";
 import { toast } from "react-toastify";
+import UserDetailsModal from "./UserDetailsModal";
 
 const UserCard: FC<UserCardProps> = ({
   id,
@@ -16,20 +18,49 @@ const UserCard: FC<UserCardProps> = ({
   lastDownload,
   avatarUrl,
   onPermissionsChange,
+  can_upload,
+  email,
 }) => {
-  const [state, setState] = useState<boolean>(is_active); // ✅ Inicializa con is_active solo una vez
+  const [stateActive, setStateActive] = useState<boolean>(is_active);
+  const [stateUpload, setStateUpload] = useState<boolean>(can_upload ?? false);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false); // Estado para el modal
   const { updateUserStatus, error } = useUpdateUserStatus();
 
-  const handleViewChange = async (newValue: boolean) => {
-    const success = await updateUserStatus(id, newValue);
+  // Función para abrir el modal
+  const handleAuditClick = () => {
+    setIsAuditModalOpen(true);
+  };
+
+  // Función cuando se confirma la auditoría
+  const confirmAudit = () => {
+    toast.success(`Auditoría de ${name} confirmada.`);
+    setIsAuditModalOpen(false);
+  };
+
+  // Cambiar el estado de login
+  const handleLoginChange = async (newValue: boolean) => {
+    const success = await updateUserStatus(id, newValue, stateUpload);
     if (success) {
-      setState(newValue); // ✅ actualiza solo el switch
+      setStateActive(newValue);
       toast.success(`Permisos actualizados para ${name}`);
       if (onPermissionsChange) {
-        onPermissionsChange({ state: newValue }); // solo si necesitas
+        onPermissionsChange({ state: newValue });
       }
+    } else {
+      toast.error(`Error al actualizar permisos: ${error}`);
     }
-    else {
+  };
+
+  // Cambiar el estado de subida de archivos
+  const handleUploadChange = async (newValue: boolean) => {
+    const success = await updateUserStatus(id, stateActive, newValue);
+    if (success) {
+      setStateUpload(newValue);
+      toast.success(`Permisos de subida actualizados para ${name}`);
+      if (onPermissionsChange) {
+        onPermissionsChange({ state: stateActive });
+      }
+    } else {
       toast.error(`Error al actualizar permisos: ${error}`);
     }
   };
@@ -65,19 +96,22 @@ const UserCard: FC<UserCardProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <InfoBlock
-              title="Último inicio de sesión"
+              title="Fecha de creación"
               value={lastLogin}
               icon={<Calendar size={16} className="text-blue-500 mr-2" />}
-            />
-            <InfoBlock
-              title="Número de inicios de sesión"
-              value={loginCount}
-              icon={<UserX size={16} className="text-blue-500 mr-2" />}
             />
             <InfoBlock
               title="Última descarga"
               value={lastDownload}
               icon={<Calendar size={16} className="text-blue-500 mr-2" />}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full md:w-auto"
+              label="Ver Auditoría"
+              onClick={handleAuditClick}
+              iconLeft={<UserX size={16} />}
             />
           </div>
         </div>
@@ -90,13 +124,25 @@ const UserCard: FC<UserCardProps> = ({
           </div>
           <div className="space-y-1">
             <SwitchToggle
-              label="Autorizar"
+              label="Autorizar Login"
               icon={<Eye size={16} />}
-              checked={state} // ✅ usa el estado interno
-              onChange={handleViewChange}
+              checked={stateActive}
+              onChange={handleLoginChange}
+            />
+            <SwitchToggle
+              label="Autorizar Subida"
+              icon={<Eye size={16} />}
+              checked={stateUpload}
+              onChange={handleUploadChange}
             />
           </div>
         </div>
+        <UserDetailsModal
+          isOpen={isAuditModalOpen}
+          onClose={() => setIsAuditModalOpen(false)}
+          email={email}
+          userId={id}
+        />
       </div>
     </div>
   );

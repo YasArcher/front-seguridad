@@ -5,7 +5,7 @@ import defaultIcon from "../assets/defaultIcon.svg";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { customFetch } from "./customFetch";
 
-const API_URL = 'https://localhost/files/';
+const API_URL = 'httpS://localhost/files/';
 
 interface ApiFileResponse {
   file_id: number;
@@ -16,6 +16,8 @@ interface ApiFileResponse {
   can_view: boolean;
   can_download: boolean;
   permission_type: 'view' | 'download' | 'both' | 'full';
+  lastDownload: string;
+  totalDownloads: number;
 }
 
 interface FileListResponse {
@@ -61,29 +63,64 @@ export const getFilesService = async (
 
   const data: FileListResponse = await response.json();
 
-  return data.files.map((file) => {
-    const baseFile: FileCardProps = {
-      id: file.file_id,
-      icon: getFileIcon(file.file_name),
-      title: file.file_name,
-      accessType: file.access_type,
-      type: file.file_name.split('.').pop()?.toUpperCase() || 'FILE',
-      can_view: file.can_view,
-      can_download: file.can_download,
-      permissionType: file.permission_type,
-    };
+  // 🔥 Agregar info de descargas por cada archivo
+  const enrichedFiles = await Promise.all(
+    data.files.map(async (file) => {
+      let downloadStats = { totalDownloads: 0, lastDownload: "-", userDownloadStats: [] };
 
-    if (actionType === 'full') {
-      return {
-        ...baseFile,
-        onDelete: () => console.log(`Eliminando ${file.file_name}`),
-        onUserPermissions: () => console.log(`Permisos de ${file.file_name}`),
+      try {
+        const historyResponse = await customFetch(`${API_URL}${file.file_id}/download-history`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        }, logout);
+
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          const history = historyData.history ?? [];
+
+          const totalDownloads = history.reduce((acc: any, item: any) => acc + (item.download_count || 0), 0);
+          const lastDownload = history.reduce((latest: any, item: any) =>
+            latest > item.last_download ? latest : item.last_download, "");
+
+          downloadStats = {
+            totalDownloads,
+            lastDownload,
+            userDownloadStats: history,
+          };
+        }
+      } catch (e) {
+        console.warn(`Error al obtener historial de descargas para ${file.file_name}:`, e);
+      }
+
+      const baseFile: FileCardProps = {
+        id: file.file_id,
+        icon: getFileIcon(file.file_name),
+        title: file.file_name,
+        accessType: file.access_type,
+        type: file.file_name.split('.').pop()?.toUpperCase() || 'FILE',
+        can_view: file.can_view,
+        can_download: file.can_download,
+        permissionType: file.permission_type,
+        ...downloadStats,  // <--- Combina la info,
+        lastModified: downloadStats.lastDownload,
+        downolad_count: downloadStats.totalDownloads,
       };
-    }
 
-    return baseFile;
-  });
+      if (actionType === 'full') {
+        return {
+          ...baseFile,
+          onDelete: () => console.log(`Eliminando ${file.file_name}`),
+          onUserPermissions: () => console.log(`Permisos de ${file.file_name}`),
+        };
+      }
+
+      return baseFile;
+    })
+  );
+
+  return enrichedFiles;
 };
+
 
 export const uploadFileService = async (file: File, token: string, logout?: () => void) => {
   const formData = new FormData();

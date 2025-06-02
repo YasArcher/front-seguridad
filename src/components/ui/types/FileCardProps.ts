@@ -42,4 +42,5 @@ export interface FileCardProps {
   permissionType?: 'view' | 'download' | 'both' | 'full';
   can_view?: boolean;
   can_download?: boolean;
+  downolad_count?: number;
 }

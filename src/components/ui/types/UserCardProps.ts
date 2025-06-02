@@ -7,4 +7,6 @@ export interface UserCardProps {
   lastDownload: string;
   onPermissionsChange?: (permissions: { state: boolean }) => void;
   avatarUrl?: string;
+  can_upload?: boolean;
+  email: string;
 }

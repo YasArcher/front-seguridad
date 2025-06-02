@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import {
   getFilesService,
   deleteFileService,
-  downloadFileService,
-  // @ts-ignore
-  viewFileService,
+  downloadFileService
 } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";
@@ -14,7 +12,8 @@ type ActionType = "basic" | "full";
 export const useFiles = (
   actionType: ActionType = "basic",
   onUserPermissionsAction?: (file: FileCardProps) => void,
-  onViewFile?: (blob: Blob, file: FileCardProps, mimeType: string) => void
+  onViewFile?: (blob: Blob, file: FileCardProps, mimeType: string) => void,
+  onBeforeViewFile?: (file: FileCardProps) => void // 👈 Nuevo parámetro
 ) => {
   const [files, setFiles] = useState<FileCardProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,6 +63,7 @@ export const useFiles = (
         };
 
         const handleView = async () => {
+          if (onBeforeViewFile) onBeforeViewFile(file); // 👈 Llamamos antes de iniciar el fetch
           try {
             const response = await fetch(
               `https://localhost/files/${file.id}/view`,
@@ -87,7 +87,7 @@ export const useFiles = (
 
             if (onViewFile) onViewFile(blob, file, mimeType);
           } catch (e: any) {
-            setError(`Error al visualizar el archivo: ${e.message}`);
+            setError(e.message);
           }
         };
 
@@ -104,7 +104,6 @@ export const useFiles = (
           return {
             ...file,
             onDownload: handleDownload,
-            onViewKey: handleView,
             onDelete: handleDelete,
             onUserPermissions: () => onUserPermissionsAction(file),
           };

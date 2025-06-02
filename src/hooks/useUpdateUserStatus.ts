@@ -10,8 +10,7 @@ export const useUpdateUserStatus = () => {
   const updateUserStatus = async (
     id: number,
     isActive: boolean,
-    role: string = "user",
-    canUpload: boolean = true
+    canUpload: boolean
   ): Promise<boolean> => {
     if (!token) {
       setError("Sesión no válida.");
@@ -23,7 +22,7 @@ export const useUpdateUserStatus = () => {
 
     try {
       await updateUserStatusService(
-        { id, is_active: isActive, role, can_upload: canUpload, token },
+        { id, is_active: isActive, role: "user", can_upload: canUpload, token },
         logout
       );
       return true;

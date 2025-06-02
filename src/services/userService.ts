@@ -1,4 +1,4 @@
-const API_URL = "https://localhost";
+const API_URL = "httpS://localhost";
 import { customFetch } from "./customFetch";
 // Interfaces
 interface UpdateUserStatusParams {
@@ -49,7 +49,7 @@ export const getAllUsers = async (token: string, logout?: () => void) => {
 };
 
 export const updateUserStatusService = async (
-  { id, is_active, token }: UpdateUserStatusParams,
+  { id, is_active, token, can_upload }: UpdateUserStatusParams,
   logout?: () => void
 ): Promise<void> => {
   const response = await customFetch(`${API_URL}/auth/admin/update-user`, {
@@ -58,7 +58,7 @@ export const updateUserStatusService = async (
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ id, is_active, role: "user", can_upload: true })
+    body: JSON.stringify({ id, is_active, role: "user", can_upload })
   }, logout);
 
   const data = await response.json();
@@ -87,7 +87,7 @@ export const getFilePermissionsByUsers = async (
   fileId: string,
   token: string
 ): Promise<FilePermissionResponse> => {
-  const response = await fetch(`https://localhost/files/${fileId}/permissions/users`, {
+  const response = await fetch(`httpS://localhost/files/${fileId}/permissions/users`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

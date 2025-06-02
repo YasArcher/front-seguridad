@@ -33,7 +33,6 @@ const ConfiguracionArchivos = () => {
     error: filesError,
     refresh: refreshFiles,
   } = useFiles("full", handleUserPermissions);
-
   const filteredFiles = searchFiles(searchTerm);
 
   const fileId =
@@ -179,6 +178,8 @@ const ConfiguracionArchivos = () => {
           onRemoveUser={handleRemoveUser}
           onGenerateReport={handleGenerateReport}
           fileId={String(selectedFile.id)}
+          lastDownload={selectedFile.lastModified || "-"}
+          downloadCount={selectedFile.downolad_count || 0}
         />
       )}
     </div>

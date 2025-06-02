@@ -8,7 +8,6 @@ const FileCard: FC<FileCardProps> = ({
   accessType,
   type,
   size,
-  lastModified,
   onDownload,
   onDelete,
   onEdit,
@@ -174,12 +173,6 @@ const FileCard: FC<FileCardProps> = ({
                 <span className="flex items-center">
                   <span className="font-medium">Tamaño:</span>
                   <span className="ml-1">{size}</span>
-                </span>
-              )}
-              {lastModified && (
-                <span className="flex items-center">
-                  <span className="font-medium">Modificado:</span>
-                  <span className="ml-1">{lastModified}</span>
                 </span>
               )}
             </div>
