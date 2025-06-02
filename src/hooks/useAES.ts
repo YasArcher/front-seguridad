@@ -24,11 +24,9 @@ export const useAES = () => {
     setLoading(true);
     setError(null);
     try {
-      // Simulamos trabajo pesado (opcional)
-      await new Promise((res) => setTimeout(res, 100));
       return AES128.decrypt(data);
     } catch (e: any) {
-      setError(e.message || 'Error al descifrar');
+      setError(e.message);
       return null;
     } finally {
       setLoading(false);

@@ -1,5 +1,7 @@
 type Word = number[];
 type State = Word[];
+const keyAES = import.meta.env.VITE_AES_WORD;
+
 
 class AES128 {
   private static readonly SBOX: number[] = [
@@ -213,7 +215,7 @@ class AES128 {
 
   public static encrypt(data: Uint8Array): Uint8Array {
     //clave desde .env
-    const key = process.env.AES_WORD || "default_key_1234";
+    const key = keyAES;
     const keyBytes = AES128.normalizeKey(key);
     const roundKeys = AES128.keyExpansion(keyBytes);
     const paddedData = AES128.pad(data);
@@ -240,29 +242,33 @@ class AES128 {
   }
 
   public static decrypt(data: Uint8Array): Uint8Array {
-    const key = process.env.AES_WORD || "default_key_1234";
-    const keyBytes = AES128.normalizeKey(key);
-    const roundKeys = AES128.keyExpansion(keyBytes);
-    const result = new Uint8Array(data.length);
+    try {
+      const key = keyAES;
+      const keyBytes = AES128.normalizeKey(key);
+      const roundKeys = AES128.keyExpansion(keyBytes);
+      const result = new Uint8Array(data.length);
 
-    for (let i = 0; i < data.length; i += 16) {
-      let state = AES128.bytesToState(data.slice(i, i + 16));
-      state = AES128.addRoundKey(state, roundKeys[10].flat());
+      for (let i = 0; i < data.length; i += 16) {
+        let state = AES128.bytesToState(data.slice(i, i + 16));
+        state = AES128.addRoundKey(state, roundKeys[10].flat());
 
-      for (let round = 9; round > 0; round--) {
+        for (let round = 9; round > 0; round--) {
+          state = AES128.invShiftRows(state);
+          state = AES128.invSubBytes(state);
+          state = AES128.addRoundKey(state, roundKeys[round].flat());
+          state = AES128.invMixColumns(state);
+        }
+
         state = AES128.invShiftRows(state);
         state = AES128.invSubBytes(state);
-        state = AES128.addRoundKey(state, roundKeys[round].flat());
-        state = AES128.invMixColumns(state);
+        state = AES128.addRoundKey(state, roundKeys[0].flat());
+        result.set(AES128.stateToBytes(state), i);
       }
-
-      state = AES128.invShiftRows(state);
-      state = AES128.invSubBytes(state);
-      state = AES128.addRoundKey(state, roundKeys[0].flat());
-      result.set(AES128.stateToBytes(state), i);
+      return AES128.unpad(result);
+    } catch (error) {
+      console.error("Error during decryption:", error);
+      throw new Error("Decryption failed");
     }
-
-    return AES128.unpad(result);
   }
 }
 

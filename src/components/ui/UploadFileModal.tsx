@@ -13,7 +13,7 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { uploadFile, isLoading, error } = useUploadFile();
   const { token } = useAuth(); // Obtiene el token desde el contexto de Auth
-  const { encrypt } = useAES();
+  const { encrypt, error: errorAes } = useAES();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -21,18 +21,38 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!selectedFile || !token) return;
+const handleSubmit = async (e?: React.FormEvent) => {
+  e?.preventDefault();
+  if (!selectedFile || !token) return;
 
-    const result = await uploadFile(selectedFile, token);
+  try {
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    const encryptedData = await encrypt(uint8Array);
+    if (!encryptedData) {
+      toast.error("Error: "+errorAes);
+      return;
+    }
+
+    // Crear un nuevo Blob o File cifrado
+    const encryptedBlob = new Blob([new Uint8Array(encryptedData)], { type: selectedFile.type });
+    const encryptedFile = new File([encryptedBlob], selectedFile.name, { type: selectedFile.type });
+
+    // Ahora sí, subir el archivo cifrado
+    const result = await uploadFile(encryptedFile, token);
     if (result.success) {
-      toast.success('Archivo subido exitosamente');
+      toast.success("Archivo cifrado y subido exitosamente");
       onClose();
+      setSelectedFile(null); // Reseteamos estado
     } else {
       toast.error(`Error al subir el archivo: ${error}`);
     }
-  };
+  } catch (err: any) {
+    toast.error("Error procesando el archivo.");
+  }
+};
+
 
   return (
     <Modal
