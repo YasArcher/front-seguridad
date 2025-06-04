@@ -1,19 +1,18 @@
-import type { FC } from 'react';
-import { useState } from 'react';
-import type { UploadFileModalProps } from './types/UploadFileModalProps';
-import Modal from './Modal';
-import Button from './Button';
-import { useUploadFile } from '../../hooks/useUploadFile';
-import { useAuth } from '../../Context/AuthContext';
+import type { FC } from "react";
+import { useState } from "react";
+import type { UploadFileModalProps } from "./types/UploadFileModalProps";
+import Modal from "./Modal";
+import Button from "./Button";
+import { useUploadFile } from "../../hooks/useUploadFile";
+import { useAuth } from "../../Context/AuthContext";
 import { toast } from "react-toastify";
-import { useAES } from '../../hooks/useAES';
-
+import { useAES } from "../../hooks/useAES";
 
 const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { uploadFile, isLoading, error } = useUploadFile();
   const { token } = useAuth(); // Obtiene el token desde el contexto de Auth
-  const { encrypt, error: errorAes } = useAES();
+  const { encrypt, error: errorAes, decrypt } = useAES();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -21,45 +20,74 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-const handleSubmit = async (e?: React.FormEvent) => {
-  e?.preventDefault();
-  if (!selectedFile || !token) return;
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!selectedFile || !token) return;
 
-  try {
-    const arrayBuffer = await selectedFile.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    try {
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+//////////////////////////////////////////////////////////////////
+      // Codifica la cadena a Uint8Array
+      const encoder = new TextEncoder();
+      const data = encoder.encode("software123");
 
+      // Cifra los datos (Uint8Array)
+      const encryptedData1 = await encrypt(data);
 
-    //Asi se enviuan cadenas a cifrar
-    // const encoder = new TextEncoder();
-    // const data = encoder.encode("software123");
-    // const encryptedString = await encrypt(data);
-    // console.log("Encrypted:", encryptedString);
+      // 🔸 Mostrar el texto cifrado en HEX (legible)
+      const hexString = Array.from(encryptedData1 || new Uint8Array())
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      toast.success("Texto cifrado (hex): " + hexString);
+      console.log("Texto cifrado (hex):", hexString);
 
-    const encryptedData = await encrypt(uint8Array);
-    if (!encryptedData) {
-      toast.error("Error: "+errorAes);
-      return;
+      // 🔸 Si quieres mostrar en Base64 también (opcional)
+      const base64String = btoa(
+        String.fromCharCode(...(encryptedData1 || new Uint8Array()))
+      );
+      console.log("Texto cifrado (base64):", base64String);
+
+      // Descifra los datos
+      const decryptedData = await decrypt(encryptedData1 || new Uint8Array());
+
+      // Decodifica el resultado descifrado como texto
+      const textDecoder = new TextDecoder();
+      const originalText = textDecoder.decode(
+        decryptedData || new Uint8Array()
+      );
+      toast.success("Texto descifrado: " + originalText);
+      console.log("Texto descifrado:", originalText);
+      
+      //////////////////////////////////
+
+      const encryptedData = await encrypt(uint8Array);
+      if (!encryptedData) {
+        toast.error("Error: " + errorAes);
+        return;
+      }
+
+      // Crear un nuevo Blob o File cifrado
+      const encryptedBlob = new Blob([new Uint8Array(encryptedData)], {
+        type: selectedFile.type,
+      });
+      const encryptedFile = new File([encryptedBlob], selectedFile.name, {
+        type: selectedFile.type,
+      });
+
+      // Ahora sí, subir el archivo cifrado
+      const result = await uploadFile(encryptedFile, token);
+      if (result.success) {
+        toast.success("Archivo cifrado y subido exitosamente");
+        onClose();
+        setSelectedFile(null); // Reseteamos estado
+      } else {
+        toast.error(`Error al subir el archivo: ${error}`);
+      }
+    } catch (err: any) {
+      toast.error("Error procesando el archivo.");
     }
-
-    // Crear un nuevo Blob o File cifrado
-    const encryptedBlob = new Blob([new Uint8Array(encryptedData)], { type: selectedFile.type });
-    const encryptedFile = new File([encryptedBlob], selectedFile.name, { type: selectedFile.type });
-
-    // Ahora sí, subir el archivo cifrado
-    const result = await uploadFile(encryptedFile, token);
-    if (result.success) {
-      toast.success("Archivo cifrado y subido exitosamente");
-      onClose();
-      setSelectedFile(null); // Reseteamos estado
-    } else {
-      toast.error(`Error al subir el archivo: ${error}`);
-    }
-  } catch (err: any) {
-    toast.error("Error procesando el archivo.");
-  }
-};
-
+  };
 
   return (
     <Modal
@@ -69,7 +97,7 @@ const handleSubmit = async (e?: React.FormEvent) => {
       footer={
         <>
           <Button
-            label={isLoading ? 'Subiendo...' : 'Subir archivo'}
+            label={isLoading ? "Subiendo..." : "Subir archivo"}
             variant="primary"
             onClick={() => handleSubmit()}
             disabled={isLoading || !selectedFile}
@@ -84,8 +112,8 @@ const handleSubmit = async (e?: React.FormEvent) => {
           </label>
           <div className="mt-1 flex items-center">
             <div className="w-full">
-              <label 
-                htmlFor="file-upload" 
+              <label
+                htmlFor="file-upload"
                 className="flex justify-center items-center px-4 py-3 border border-gray-300 
                   border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors
                   duration-200 ease-in-out focus-within:outline-none focus-within:ring-2 
@@ -108,10 +136,9 @@ const handleSubmit = async (e?: React.FormEvent) => {
                   </svg>
                   <div className="flex text-sm text-gray-600">
                     <span>
-                      {selectedFile 
-                        ? selectedFile.name 
-                        : "Arrastra y suelta un archivo aquí, o haz clic para seleccionar"
-                      }
+                      {selectedFile
+                        ? selectedFile.name
+                        : "Arrastra y suelta un archivo aquí, o haz clic para seleccionar"}
                     </span>
                     <input
                       id="file-upload"
