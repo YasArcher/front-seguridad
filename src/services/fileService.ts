@@ -122,9 +122,19 @@ export const getFilesService = async (
 };
 
 
-export const uploadFileService = async (file: File, token: string, logout?: () => void) => {
+export const uploadFileService = async (
+  file: File,
+  token: string,
+  logout?: () => void,
+  fileHash?: string,
+  signature?: string
+) => {
   const formData = new FormData();
   formData.append('file', file);
+
+  // ✅ Agregar nuevos campos si están disponibles
+  if (fileHash) formData.append('file_hash', fileHash);
+  if (signature) formData.append('signature', signature);
 
   const response = await customFetch(`${API_URL}`, {
     method: 'POST',

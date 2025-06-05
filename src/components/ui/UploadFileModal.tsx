@@ -25,9 +25,8 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
     if (!selectedFile || !token) return;
 
     try {
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
 //////////////////////////////////////////////////////////////////
+      // Ejemplo de cifrado de una cadena de texto
       // Codifica la cadena a Uint8Array
       const encoder = new TextEncoder();
       const data = encoder.encode("software123");
@@ -58,25 +57,10 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
       );
       toast.success("Texto descifrado: " + originalText);
       console.log("Texto descifrado:", originalText);
+      console.error("Error en el cifrado AES:", errorAes);
       
-      //////////////////////////////////
-
-      const encryptedData = await encrypt(uint8Array);
-      if (!encryptedData) {
-        toast.error("Error: " + errorAes);
-        return;
-      }
-
-      // Crear un nuevo Blob o File cifrado
-      const encryptedBlob = new Blob([new Uint8Array(encryptedData)], {
-        type: selectedFile.type,
-      });
-      const encryptedFile = new File([encryptedBlob], selectedFile.name, {
-        type: selectedFile.type,
-      });
-
-      // Ahora sí, subir el archivo cifrado
-      const result = await uploadFile(encryptedFile, token);
+//////////////////////////////////////////////////////////////////
+      const result = await uploadFile(selectedFile, token);
       if (result.success) {
         toast.success("Archivo cifrado y subido exitosamente");
         onClose();
