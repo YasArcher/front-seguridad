@@ -1,4 +1,4 @@
-import { FiFileText, FiSettings, FiShield } from "react-icons/fi";
+import { FiFileText, FiSettings, FiShield ,FiDollarSign } from "react-icons/fi";
 import type { SidebarItemProps } from "../components/ui/types/SidebarItemProps";
 
 export const menuItems: SidebarItemProps[] = [
@@ -9,6 +9,14 @@ export const menuItems: SidebarItemProps[] = [
     iconColor: "text-blue-500",
     title: "Gestión de Archivos",
     description: "Sube, organiza y edita archivos",
+  },
+    {
+    id: "verificacion-firma",
+    path: "/verificacion-firma",
+    icon: FiDollarSign,
+    iconColor: "text-blue-500",
+    title: "Verificación de Firma",
+    description: "Verifica la autenticidad de documentos",
   },
   {
     id: "configuracion",
