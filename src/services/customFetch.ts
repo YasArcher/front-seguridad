@@ -7,8 +7,8 @@ export const customFetch = async (
   try {
     const response = await fetch(url, options);
 
-    if (response.status === 401 && logout) {
-      logout(); // Cierre de sesión automático si el token es inválido
+    if ((response.status === 401 || response.status === 501) && logout) {
+      logout(); // Cierre de sesión automático si el token es inválido o acceso denegado
     }
 
     return response;
