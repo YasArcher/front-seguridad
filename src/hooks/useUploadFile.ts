@@ -3,7 +3,6 @@ import { calculateSHA256HashHex, signHashHex } from "../utils/hash";
 import { useState } from "react";
 import { uploadFileService } from "../services/fileService";
 import { useAuth } from "../Context/AuthContext";
-const keySignature = import.meta.env.VITE_SIGNATURE_SECRET_KEY;
 
 interface UploadResponse {
   success: boolean;
@@ -30,10 +29,10 @@ export const useUploadFile = () => {
       // 1. Calcular el hash SHA-256 del archivo original
       const fileHash = await calculateSHA256HashHex(originalFile);
 
-      // 2. Firmar el hash (requiere pasar la clave privada)
-      const signature = await signHashHex(fileHash, keySignature);
+      // 2. Firmar el hash
+      const signature = await signHashHex(fileHash);
 
-      // 3. Cifrar el archivo con tu AES personalizado
+      // 3. Cifrar el archivo
       const encryptedBytes = await encrypt(new Uint8Array(originalBuffer));
       if (!encryptedBytes)
         throw new Error(aesError || "Fallo en cifrado AES personalizado");
@@ -46,7 +45,7 @@ export const useUploadFile = () => {
         type: originalFile.type,
       });
 
-      // 5. Subirlo al servidor
+      // 5. Subir al servidor
       const { status, data } = await uploadFileService(
         encryptedFile,
         token,
@@ -58,16 +57,14 @@ export const useUploadFile = () => {
       if (status >= 200 && status < 300) {
         return { success: true, data };
       } else {
-        return {
-          success: false,
-          error: data?.message || "Error al subir el archivo.",
-        };
+        const errorMessage = data?.error || "Error al subir el archivo.";
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
       }
     } catch (err: any) {
-      return {
-        success: false,
-        error: err.message || "Error inesperado al procesar el archivo.",
-      };
+      const errorMessage = err?.message || "Error inesperado al procesar el archivo.";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
