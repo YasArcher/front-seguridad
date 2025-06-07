@@ -18,6 +18,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Roles } from "./constants/roles";
 import UserProfilePage from "./pages/UserPage";
+import VerifySignaturePage from "./pages/VerifySignaturePage";
 
 // Rutas públicas (para usuarios no autenticados)
 const PublicRoute = ({ children }: { children: ReactNode }) => {
@@ -50,8 +51,12 @@ const AppRoutes = () => (
       {/* Layout privado para rutas autenticadas */}
       <Route element={<PrivateLayout />}>
         <Route path="/gestion-archivos" element={<GestionArchivos />} />
+        <Route path="/verificacion-firma" element={<VerifySignaturePage/>} />
         <Route path="/configuracion-archivos" element={<ConfiguracionArchivos />} />
         <Route path="/perfil" element={<UserProfilePage />} />
+        
+
+        {/* Rutas anidadas para el layout privado */}
         {/* Rutas protegidas por rol */}
 
         {/* Ruta solo para ADMIN */}
