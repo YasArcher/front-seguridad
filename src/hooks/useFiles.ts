@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  getFilesService,
-  deleteFileService,
-} from "../services/fileService";
+import { getFilesService, deleteFileService } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";
 import { useAES } from "./useAES";
+import { addPasswordToPdf } from "../utils/addPasswordToPdf";
 
 type ActionType = "basic" | "full";
 
@@ -31,7 +29,13 @@ export const useFiles = (
 
       if (onBeforeViewFile && action === "view") onBeforeViewFile(file);
 
-      const response = await fetch(`https://localhost/files/${file.id}/view`, {
+      // Determinar qué endpoint usar:
+      const endpoint =
+        action === "download"
+          ? `https://localhost/files/${file.id}`
+          : `https://localhost/files/${file.id}/view`;
+
+      const response = await fetch(endpoint, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -51,21 +55,45 @@ export const useFiles = (
         throw new Error(errorAES || "Error al descifrar el archivo.");
 
       // 🎯 Creamos nuevo blob descifrado
-
       const decryptedBlob = new Blob([new Uint8Array(decryptedBytes)], {
         type: mimeType,
       });
 
       if (action === "download") {
-        const url = window.URL.createObjectURL(decryptedBlob);
+        // Leer la contraseña del header
+        const protectionPassword =
+          response.headers.get("X-File-Protection-Password") ||
+          "defaultPassword";
+
+        // Convertir Blob a Uint8Array
+        const arrayBuffer = await decryptedBlob.arrayBuffer();
+        const inputPdfBytes = new Uint8Array(arrayBuffer);
+
+        // Aplicar la contraseña obtenida del header
+        // const protectedPdfBytes = await addPasswordToPdf(
+        //   inputPdfBytes,
+        //   protectionPassword
+        // );
+        // const protectedBlob = new Blob([new Uint8Array(protectedPdfBytes)], {
+        //  type: "application/pdf",
+        // });
+
+        // Crear el Blob protegido
+        const protectedBlob = new Blob([inputPdfBytes], {
+          type: "application/pdf",
+        });
+
+        // Descargar el PDF protegido
+        const url = window.URL.createObjectURL(protectedBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = file.title;
+        link.download = `${file.title}_protegido.pdf`;
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
       } else if (action === "view" && onViewFile) {
+        // En visualización no usas la protección, solo el PDF libre
         onViewFile(decryptedBlob, file, mimeType);
       }
     } catch (e: any) {
