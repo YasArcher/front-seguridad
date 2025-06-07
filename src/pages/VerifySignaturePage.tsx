@@ -4,6 +4,7 @@ import ContentContainer from "../components/ui/ContentContainer";
 import Button from "../components/ui/Button";
 import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
+import { verifySignatureService } from "../services/fileService";
 
 const VerificarFirmaPage = () => {
   const [hash, setHash] = useState("");
@@ -11,31 +12,24 @@ const VerificarFirmaPage = () => {
   const { token } = useAuth();
 
   const handleVerify = async () => {
-    if (!hash || !signature || !token) {
-      toast.error("Debes ingresar el hash y la firma para verificar.");
-      return;
-    }
+  if (!hash || !signature || !token) {
+    toast.error("Debes ingresar el hash y la firma para verificar.");
+    return;
+  }
 
-    try {
-      const response = await fetch("http://localhost:5000/files/verify-signature", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ file_hash: hash, signature }),
-      });
+  try {
+    const result = await verifySignatureService(hash, signature, token);
 
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("✔ Firma válida: " + data.message);
-      } else {
-        toast.error("✘ Firma inválida: " + data.error);
-      }
-    } catch (err) {
-      toast.error("Error al verificar la firma.");
+    if (result.valid) {
+      toast.success("✔ Firma válida: " + result.message);
+    } else {
+      toast.error("✘ Firma inválida: " + (result.error || "Error desconocido"));
     }
-  };
+  } catch (err) {
+    toast.error("Error al verificar la firma.");
+  }
+};
+
 
   return (
     <div className="flex flex-col flex-1">
