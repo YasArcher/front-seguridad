@@ -249,3 +249,46 @@ export const viewFileService = async (
 
   return response.blob();
 };
+
+
+export const verifySignatureService = async (
+  fileHash: string,
+  signature: string,
+  token: string,
+  logout?: () => void
+): Promise<{ valid: boolean; message?: string; error?: string }> => {
+  try {
+    const response = await customFetch(`${API_URL}verify-signature`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file_hash: fileHash,
+        signature: signature,
+      }),
+    }, logout);
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        valid: false,
+        error: data.error || "Error al verificar firma.",
+      };
+    }
+
+    return {
+      valid: data.valid,
+      message: data.message,
+    };
+  } catch (e: any) {
+    // Captura de error de red, error en customFetch, etc.
+    console.error("Error en verifySignatureService:", e);
+    return {
+      valid: false,
+      error: e.message || "Error inesperado al verificar firma.",
+    };
+  }
+};
