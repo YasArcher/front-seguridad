@@ -1,7 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
 import Modal from "./Modal";
-import InfoBlock from "./InfoBlock";
 import { useAuditData } from "../../hooks/useAuditData";
 
 type UserDetailsModalProps = {

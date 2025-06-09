@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  getFilesService,
-  deleteFileService,
-} from "../services/fileService";
+import { getFilesService, deleteFileService } from "../services/fileService";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { useAuth } from "../Context/AuthContext";
 import { useAES } from "./useAES";
@@ -18,7 +15,7 @@ export const useFiles = (
   const [files, setFiles] = useState<FileCardProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { token, logout } = useAuth();
+  const { token, logout, role } = useAuth();
   const { decrypt, error: errorAES } = useAES();
 
   // 🎯 Función modular para descargar o visualizar archivos
@@ -31,7 +28,13 @@ export const useFiles = (
 
       if (onBeforeViewFile && action === "view") onBeforeViewFile(file);
 
-      const response = await fetch(`https://localhost/files/${file.id}/view`, {
+      // Determinar qué endpoint usar:
+      const endpoint =
+        action === "download"
+          ? `https://localhost/files/${file.id}`
+          : `https://localhost/files/${file.id}/view`;
+
+      const response = await fetch(endpoint, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -51,21 +54,47 @@ export const useFiles = (
         throw new Error(errorAES || "Error al descifrar el archivo.");
 
       // 🎯 Creamos nuevo blob descifrado
-
       const decryptedBlob = new Blob([new Uint8Array(decryptedBytes)], {
         type: mimeType,
       });
 
       if (action === "download") {
-        const url = window.URL.createObjectURL(decryptedBlob);
+        // 1️⃣ Preparar FormData con el archivo descifrado
+        const formData = new FormData();
+        formData.append("file", decryptedBlob, file.title + ".pdf");
+
+        // 2️⃣ Hacer POST a /files/protect-dw-pdf
+        const protectResponse = await fetch(
+          "https://localhost/files/protect-dw-pdf",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`, // obligatorio
+              // No pongas Content-Type → fetch lo pone solo al usar FormData
+            },
+            body: formData,
+          }
+        );
+
+        if (!protectResponse.ok) {
+          const errorData = await protectResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || "Error al proteger el PDF.");
+        }
+
+        // 3️⃣ Obtener el PDF protegido de la respuesta
+        const protectedBlob = await protectResponse.blob();
+
+        // 4️⃣ Descargar el PDF protegido
+        const url = window.URL.createObjectURL(protectedBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = file.title;
+        link.download = `${file.title}_protegido.pdf`;
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
       } else if (action === "view" && onViewFile) {
+        // En visualización no usas la protección, solo el PDF libre
         onViewFile(decryptedBlob, file, mimeType);
       }
     } catch (e: any) {
@@ -92,7 +121,9 @@ export const useFiles = (
 
       const filteredFiles =
         actionType === "full"
-          ? fetchedFiles.filter((file) => file.accessType === "own")
+          ? role === "admin"
+            ? fetchedFiles // Admin → ve todo
+            : fetchedFiles.filter((file) => file.accessType === "own") // No admin → ve solo own
           : fetchedFiles;
 
       const filesWithActions = filteredFiles.map((file) => {
