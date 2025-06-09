@@ -45,10 +45,24 @@ export const useAuditData = ({ userId, email }: UseAuditDataParams) => {
     setError(null);
 
     try {
-      const permissionsRes = await getUserPermissionsService(userId, token, logout);
+      // Lanzamos las 5 peticiones en paralelo con Promise.all
+      const [
+        permissionsRes,
+        sessionsRes,
+        filesRes,
+        loginsRes,
+        downloadsRes
+      ] = await Promise.all([
+        getUserPermissionsService(userId, token, logout),
+        getUserSessionsService(userId, token, logout),
+        getUserFilesService(userId, token, logout),
+        getUserLoginAttemptsService(email, token, logout),
+        getUserDownloadsService(userId, token, logout)
+      ]);
+
+      // Procesamos los resultados
       const permissionsLogs = permissionsRes.logs || [];
 
-      const sessionsRes = await getUserSessionsService(userId, token, logout);
       const sessionsLogs = sessionsRes.logs || [];
       const sessionsData = sessionsRes.data.map((s) => ({
         ip: s.ip_address,
@@ -56,28 +70,33 @@ export const useAuditData = ({ userId, email }: UseAuditDataParams) => {
         lastActivity: s.last_activity_at,
       }));
 
-      const filesRes = await getUserFilesService(userId, token, logout);
       const filesLogs = filesRes.logs || [];
       const filesData = filesRes.data.map((f) => f.file_name);
 
-      const loginsRes = await getUserLoginAttemptsService(email, token, logout);
       const loginsLogs = loginsRes.logs || [];
       const loginsData = loginsRes.data.map((l) => ({
         attemptedAt: l.attempt_time,
       }));
 
-      const downloadsRes = await getUserDownloadsService(userId, token, logout);
       const downloadsLogs = downloadsRes.logs || [];
-      const downloadsData = downloadsRes.data.map((d:any) => ({
+      const downloadsData = downloadsRes.data.map((d: any) => ({
         fileId: d.file_id,
         time: d.download_time,
         ip: d.ip_address,
         userAgent: d.user_agent,
       }));
 
-      const combinedLogs = [...permissionsLogs, ...sessionsLogs, ...filesLogs, ...loginsLogs, ...downloadsLogs];
+      // Combinar logs
+      const combinedLogs = [
+        ...permissionsLogs,
+        ...sessionsLogs,
+        ...filesLogs,
+        ...loginsLogs,
+        ...downloadsLogs
+      ];
       const sortedLogs = sortLogsByDate(combinedLogs);
 
+      // Actualizar estados
       setAuditLogs(sortedLogs);
       setActiveSessions(sessionsData);
       setUploadedFiles(filesData);
