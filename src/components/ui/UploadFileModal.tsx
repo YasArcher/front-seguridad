@@ -3,16 +3,16 @@ import { useState } from "react";
 import type { UploadFileModalProps } from "./types/UploadFileModalProps";
 import Modal from "./Modal";
 import Button from "./Button";
-import { useUploadFile } from "../../hooks/useUploadFile";
-import { useAuth } from "../../Context/AuthContext";
 import { toast } from "react-toastify";
-import { useAES } from "../../hooks/useAES";
 
-const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
+interface GenericUploadFileModalProps extends UploadFileModalProps {
+  onUpload: (file: File) => Promise<void>;
+}
+
+const UploadFileModal: FC<GenericUploadFileModalProps> = ({ isOpen, onClose, onUpload }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { uploadFile, isLoading, error } = useUploadFile();
-  const { token } = useAuth(); // Obtiene el token desde el contexto de Auth
-  const { encrypt, error: errorAes, decrypt } = useAES();
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -22,54 +22,23 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!selectedFile || !token) return;
+    if (!selectedFile) return;
 
     try {
-//////////////////////////////////////////////////////////////////
-      // Ejemplo de cifrado de una cadena de texto
-      // Codifica la cadena a Uint8Array
-      const encoder = new TextEncoder();
-      const data = encoder.encode("software123");
+      setIsUploading(true);
+      setError(null);
 
-      // Cifra los datos (Uint8Array)
-      const encryptedData1 = await encrypt(data);
+      await onUpload(selectedFile);
 
-      // 🔸 Mostrar el texto cifrado en HEX (legible)
-      const hexString = Array.from(encryptedData1 || new Uint8Array())
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      toast.success("Texto cifrado (hex): " + hexString);
-      console.log("Texto cifrado (hex):", hexString);
-
-      // 🔸 Si quieres mostrar en Base64 también (opcional)
-      const base64String = btoa(
-        String.fromCharCode(...(encryptedData1 || new Uint8Array()))
-      );
-      console.log("Texto cifrado (base64):", base64String);
-
-      // Descifra los datos
-      const decryptedData = await decrypt(encryptedData1 || new Uint8Array());
-
-      // Decodifica el resultado descifrado como texto
-      const textDecoder = new TextDecoder();
-      const originalText = textDecoder.decode(
-        decryptedData || new Uint8Array()
-      );
-      toast.success("Texto descifrado: " + originalText);
-      console.log("Texto descifrado:", originalText);
-      console.error("Error en el cifrado AES:", errorAes);
-      
-//////////////////////////////////////////////////////////////////
-      const result = await uploadFile(selectedFile, token);
-      if (result.success) {
-        toast.success("Archivo cifrado y subido exitosamente");
-        onClose();
-        setSelectedFile(null); // Reseteamos estado
-      } else {
-        toast.error(`Error al subir el archivo: ${error}`);
-      }
+      toast.success("Archivo subido exitosamente");
+      onClose();
+      setSelectedFile(null);
     } catch (err: any) {
-      toast.error("Error procesando el archivo.");
+      console.error("Error en la subida:", err);
+      setError("Error al subir el archivo.");
+      toast.error("Error al subir el archivo.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -81,10 +50,10 @@ const UploadFileModal: FC<UploadFileModalProps> = ({ isOpen, onClose }) => {
       footer={
         <>
           <Button
-            label={isLoading ? "Subiendo..." : "Subir archivo"}
+            label={isUploading ? "Subiendo..." : "Subir archivo"}
             variant="primary"
             onClick={() => handleSubmit()}
-            disabled={isLoading || !selectedFile}
+            disabled={isUploading || !selectedFile}
           />
         </>
       }

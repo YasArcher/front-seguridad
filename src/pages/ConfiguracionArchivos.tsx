@@ -12,8 +12,13 @@ import GenericList from "../components/ui/GenericList";
 import FileCard from "../components/ui/FileCard";
 import { toast } from "react-toastify";
 import type { User } from "../services/Types/User";
+import { useUploadFile } from "../hooks/useUploadFile";
+import { useAuth } from "../Context/AuthContext";
 
 const ConfiguracionArchivos = () => {
+  const { uploadFile, isLoading, error } = useUploadFile();
+  const { token } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUserPermissionsModalOpen, setIsUserPermissionsModalOpen] =
@@ -97,6 +102,27 @@ const ConfiguracionArchivos = () => {
     toast.success(`Informe generado para ${selectedFile?.title}.`);
   };
 
+  const handleUploadFile = async (file: File) => {
+    if (!token) {
+      toast.error("No hay sesión activa.");
+      return;
+    }
+
+    try {
+      const result = await uploadFile(file, token);
+
+      if (result.success) {
+        toast.success("Archivo subido exitosamente.");
+        setIsUploadModalOpen(false);
+        refreshFiles(); // refrescamos la lista
+      } else {
+        toast.error(`Error al subir el archivo: ${error}`);
+      }
+    } catch (err: any) {
+      toast.error("Error al subir el archivo.");
+    }
+  };
+
   const getCanUploadFromToken = () => {
     const token = localStorage.getItem("token");
     if (!token) return false;
@@ -160,9 +186,9 @@ const ConfiguracionArchivos = () => {
         isOpen={isUploadModalOpen}
         onClose={() => {
           setIsUploadModalOpen(false);
-
           refreshFiles();
         }}
+        onUpload={handleUploadFile} // 👈 aquí le pasas la función
       />
 
       {selectedFile && (
