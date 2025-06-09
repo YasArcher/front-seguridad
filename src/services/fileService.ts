@@ -4,7 +4,6 @@ import mp3Icon from "../assets/mp3.svg";
 import defaultIcon from "../assets/defaultIcon.svg";
 import type { FileCardProps } from "../components/ui/types/FileCardProps";
 import { customFetch } from "./customFetch";
-import { useAuth } from "../Context/AuthContext";
 
 const API_URL = 'httpS://localhost/files/';
 
@@ -33,6 +32,7 @@ interface ShareFileParams {
   token: string;
   targetUserId: number;
   permissionType: 'download' | 'view' | 'both' | 'none';
+  role: string
 }
 
 const getFileIcon = (fileName: string): string => {
@@ -187,11 +187,9 @@ export const shareFileService = async (
 };
 
 export const updateShareFileService = async (
-  { fileId, token, targetUserId, permissionType }: ShareFileParams,
+  { fileId, token, targetUserId, permissionType, role }: ShareFileParams,
   logout?: () => void
 ): Promise<void> => {
-  const {role} = useAuth();
-  console.log('Updating file share:', { fileId, targetUserId, permissionType });
   const response = await customFetch(`${API_URL}${fileId}/permissions`, {
     method: 'PUT',
     headers: {

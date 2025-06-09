@@ -6,7 +6,7 @@ import {
 import { useAuth } from "../Context/AuthContext";
 
 export const useShareFile = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, role } = useAuth();
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,12 +25,12 @@ export const useShareFile = () => {
 
     try {
       // Intentar compartir
-      await shareFileService({ fileId, token, targetUserId, permissionType }, logout);
+      await shareFileService({ fileId, token, targetUserId, permissionType, role: role as string }, logout);
       return true;
     } catch (err: any) {
       // Fallback: actualizar permisos si ya está compartido
       try {
-        await updateShareFileService({ fileId, token, targetUserId, permissionType }, logout);
+        await updateShareFileService({ fileId, token, targetUserId, permissionType, role: role as string }, logout);
         return true;
       } catch (updateErr: any) {
         const message = updateErr.message || "Error al actualizar los permisos.";
