@@ -255,7 +255,6 @@ export const viewFileService = async (
 
 export const verifySignatureService = async (
   fileHash: string,
-  signature: string,
   token: string,
   logout?: () => void
 ): Promise<{ valid: boolean; message?: string; error?: string }> => {
@@ -267,8 +266,7 @@ export const verifySignatureService = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        file_hash: fileHash,
-        signature: signature,
+        file_hash: fileHash,   // solo mandas el hash
       }),
     }, logout);
 
@@ -286,7 +284,6 @@ export const verifySignatureService = async (
       message: data.message,
     };
   } catch (e: any) {
-    // Captura de error de red, error en customFetch, etc.
     console.error("Error en verifySignatureService:", e);
     return {
       valid: false,
@@ -294,6 +291,8 @@ export const verifySignatureService = async (
     };
   }
 };
+
+
 
 export const protectDownloadPdfService = async (
   file: File,

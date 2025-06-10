@@ -7,11 +7,9 @@ import { useAuth } from "../Context/AuthContext";
 import { verifySignatureService } from "../services/fileService";
 import UploadFileModal from "../components/ui/UploadFileModal";
 import { calculateSHA256HashHex } from "../utils/hash";
-const API_URL = 'https://localhost/files/';
 const VerificarFirmaPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [hash, setHash] = useState("");
-  const [signature, setSignature] = useState("");
   const { token } = useAuth();
 
   
@@ -20,28 +18,14 @@ const VerificarFirmaPage = () => {
     // Calcular hash del archivo
     const hashHex = await calculateSHA256HashHex(file);
 
-    // Consultar al backend la firma guardada para ese hash
-    const response = await fetch(`${API_URL}by-hash/${hashHex}`, {
+    // Guardar el hash para usarlo en la verificación
+    setHash(hashHex);
 
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // Mostrar feedback al usuario
+    console.log("Hash del archivo:", hashHex);
+    toast.success("Archivo procesado. Listo para verificar la firma.");
 
-    const data = await response.json();
-
-    if (response.ok) {
-      setHash(hashHex);
-      setSignature(data.signature);  // Usar la firma que está en BD
-      console.log("Firma recuperada BD:", data.signature);
-      console.log("Hash del archivo BD:", hashHex);
-      toast.success("Archivo procesado. Firma recuperada de la BD.");
-    } else {
-      toast.error(data.error || "Error al recuperar la firma desde la BD.");
-    }
-
+    // Cerrar modal
     setIsUploadModalOpen(false);
   } catch (err) {
     console.error("Error al procesar el archivo:", err);
@@ -50,18 +34,17 @@ const VerificarFirmaPage = () => {
 };
 
 
-  const handleVerify = async () => {
-  if (!hash || !signature || !token) {
+
+ const handleVerify = async () => {
+  if (!hash || !token) {
     toast.error("Debes cargar un archivo para verificar.");
     return;
   }
 
   try {
-    // 🟢 Limpiar la firma
-    const cleanSignature = signature.replace(/\s+/g, '');
-    console.log("Firma limpia:", cleanSignature);
     console.log("Hash del archivo:", hash);
-    const result = await verifySignatureService(hash, cleanSignature, token);
+
+    const result = await verifySignatureService(hash, token);
 
     if (result.valid) {
       toast.success("✔ Firma válida: " + result.message);
@@ -72,6 +55,7 @@ const VerificarFirmaPage = () => {
     toast.error("Error al verificar la firma.");
   }
 };
+
 
 
   return (
@@ -104,13 +88,7 @@ const VerificarFirmaPage = () => {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Firma digital (hexadecimal)
           </label>
-          <textarea
-            className="w-full p-2 border rounded bg-white text-black"
-            placeholder="Cargar archivo para generar firma..."
-            value={signature}
-            rows={4}
-            readOnly
-          />
+        
         </div>
 
         <div className="flex justify-end">
