@@ -6,52 +6,73 @@ import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 import { verifySignatureService } from "../services/fileService";
 import UploadFileModal from "../components/ui/UploadFileModal";
-import { calculateSHA256HashHex, signHashHex } from "../utils/hash";
-
+import { calculateSHA256HashHex } from "../utils/hash";
+const API_URL = 'https://localhost/files/';
 const VerificarFirmaPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [hash, setHash] = useState("");
   const [signature, setSignature] = useState("");
   const { token } = useAuth();
 
+  
   const handleUploadFile = async (file: File) => {
-    try {
-      // Calcular hash del archivo
-      const hashHex = await calculateSHA256HashHex(file);
+  try {
+    // Calcular hash del archivo
+    const hashHex = await calculateSHA256HashHex(file);
 
-      // Firmar el hash
-      const signatureHex = await signHashHex(hashHex);
+    // Consultar al backend la firma guardada para ese hash
+    const response = await fetch(`${API_URL}by-hash/${hashHex}`, {
 
-      // Actualizar el estado para mostrar en pantalla
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
       setHash(hashHex);
-      setSignature(signatureHex);
-
-      toast.success("Archivo procesado. Hash y firma generados.");
-      setIsUploadModalOpen(false);
-    } catch (err) {
-      console.error("Error al procesar el archivo:", err);
-      toast.error("Error al procesar el archivo.");
+      setSignature(data.signature);  // Usar la firma que está en BD
+      console.log("Firma recuperada BD:", data.signature);
+      console.log("Hash del archivo BD:", hashHex);
+      toast.success("Archivo procesado. Firma recuperada de la BD.");
+    } else {
+      toast.error(data.error || "Error al recuperar la firma desde la BD.");
     }
-  };
+
+    setIsUploadModalOpen(false);
+  } catch (err) {
+    console.error("Error al procesar el archivo:", err);
+    toast.error("Error al procesar el archivo.");
+  }
+};
+
 
   const handleVerify = async () => {
-    if (!hash || !signature || !token) {
-      toast.error("Debes cargar un archivo para verificar.");
-      return;
-    }
+  if (!hash || !signature || !token) {
+    toast.error("Debes cargar un archivo para verificar.");
+    return;
+  }
 
-    try {
-      const result = await verifySignatureService(hash, signature, token);
+  try {
+    // 🟢 Limpiar la firma
+    const cleanSignature = signature.replace(/\s+/g, '');
+    console.log("Firma limpia:", cleanSignature);
+    console.log("Hash del archivo:", hash);
+    const result = await verifySignatureService(hash, cleanSignature, token);
 
-      if (result.valid) {
-        toast.success("✔ Firma válida: " + result.message);
-      } else {
-        toast.error("✘ Firma inválida: " + (result.error || "Error desconocido"));
-      }
-    } catch (err) {
-      toast.error("Error al verificar la firma.");
+    if (result.valid) {
+      toast.success("✔ Firma válida: " + result.message);
+    } else {
+      toast.error("✘ Firma inválida: " + (result.error || "Error desconocido"));
     }
-  };
+  } catch (err) {
+    toast.error("Error al verificar la firma.");
+  }
+};
+
 
   return (
     <div className="flex flex-col flex-1">
