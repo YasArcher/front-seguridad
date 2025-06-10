@@ -254,20 +254,21 @@ export const viewFileService = async (
 
 
 export const verifySignatureService = async (
-  fileHash: string,
+  file: File,
   token: string,
   logout?: () => void
 ): Promise<{ valid: boolean; message?: string; error?: string }> => {
   try {
+    const formData = new FormData();
+    formData.append("file", file);  // mandas el archivo
+
     const response = await customFetch(`${API_URL}verify-signature`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        // No pongas 'Content-Type', el navegador la pone automáticamente para FormData
       },
-      body: JSON.stringify({
-        file_hash: fileHash,   // solo mandas el hash
-      }),
+      body: formData,
     }, logout);
 
     const data = await response.json();
