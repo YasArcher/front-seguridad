@@ -128,14 +128,15 @@ export const uploadFileService = async (
   token: string,
   logout?: () => void,
   fileHash?: string,
-  signature?: string
+  signature?: string,
+  pdfPassword?: string
 ) => {
   const formData = new FormData();
   formData.append('file', file);
 
-  // ✅ Agregar nuevos campos si están disponibles
   if (fileHash) formData.append('file_hash', fileHash);
   if (signature) formData.append('signature', signature);
+  if (pdfPassword) formData.append('pdf_password', pdfPassword); // <--- agregar este campo requerido
 
   const response = await customFetch(`${API_URL}`, {
     method: 'POST',
@@ -149,7 +150,7 @@ export const uploadFileService = async (
     status: response.status,
     data: responseBody,
   };
-};
+}
 
 export const deleteFileService = async (fileId: string, token: string, logout?: () => void): Promise<void> => {
   const response = await customFetch(`${API_URL}${fileId}`, {
@@ -292,4 +293,39 @@ export const verifySignatureService = async (
       error: e.message || "Error inesperado al verificar firma.",
     };
   }
+};
+
+export const protectDownloadPdfService = async (
+  file: File,
+  token: string,
+  logout?: () => void
+): Promise<{
+  protected_pdf: string;
+  pdf_password: string;
+  file_name: string;
+}> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await customFetch('http://localhost:5000/files/protect-dw-pdf', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // No poner Content-Type → fetch la pone automáticamente con FormData
+    },
+    body: formData,
+  }, logout);
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(responseData.error || 'Error al proteger el PDF.');
+  }
+
+  // Devolvemos el objeto esperado
+  return {
+    protected_pdf: responseData.protected_pdf,
+    pdf_password: responseData.pdf_password,
+    file_name: responseData.file_name,
+  };
 };

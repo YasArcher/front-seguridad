@@ -59,36 +59,11 @@ export const useFiles = (
       });
 
       if (action === "download") {
-        // 1️⃣ Preparar FormData con el archivo descifrado
-        const formData = new FormData();
-        formData.append("file", decryptedBlob, file.title + ".pdf");
-
-        // 2️⃣ Hacer POST a /files/protect-dw-pdf
-        const protectResponse = await fetch(
-          "https://localhost/files/protect-dw-pdf",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`, // obligatorio
-              // No pongas Content-Type → fetch lo pone solo al usar FormData
-            },
-            body: formData,
-          }
-        );
-
-        if (!protectResponse.ok) {
-          const errorData = await protectResponse.json().catch(() => ({}));
-          throw new Error(errorData.error || "Error al proteger el PDF.");
-        }
-
-        // 3️⃣ Obtener el PDF protegido de la respuesta
-        const protectedBlob = await protectResponse.blob();
-
-        // 4️⃣ Descargar el PDF protegido
-        const url = window.URL.createObjectURL(protectedBlob);
+        // 1️⃣ Descargar el archivo directamente (el backend ya le quitó la capa AES y ya envió el pdf_password)
+        const url = window.URL.createObjectURL(decryptedBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${file.title}_protegido.pdf`;
+        link.download = `${file.title}.pdf`; // No le pongas _protegido → es el PDF protegido original
         document.body.appendChild(link);
         link.click();
         link.remove();

@@ -14,9 +14,11 @@ import { toast } from "react-toastify";
 import type { User } from "../services/Types/User";
 import { useUploadFile } from "../hooks/useUploadFile";
 import { useAuth } from "../Context/AuthContext";
+import { useProtectPdf } from "../hooks/useProtectPdf";
 
 const ConfiguracionArchivos = () => {
-  const { uploadFile, isLoading, error } = useUploadFile();
+  const { protectPdf, error: protectError } = useProtectPdf();
+  const { uploadFile, error: uploadError } = useUploadFile();
   const { token } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,17 +111,33 @@ const ConfiguracionArchivos = () => {
     }
 
     try {
-      const result = await uploadFile(file, token);
+      // Paso 1️⃣ → proteger el PDF
+      const protectResult = await protectPdf(file);
+
+      if (!protectResult) {
+        toast.error(`Error al proteger el PDF: ${protectError}`);
+        return;
+      }
+
+      const { protectedBlob, pdfPassword, fileName } = protectResult;
+
+      // Paso 2️⃣ → subir el archivo protegido y cifrado
+      const result = await uploadFile(
+        protectedBlob,
+        fileName,
+        pdfPassword,
+        token
+      );
 
       if (result.success) {
         toast.success("Archivo subido exitosamente.");
         setIsUploadModalOpen(false);
-        refreshFiles(); // refrescamos la lista
+        refreshFiles();
       } else {
-        toast.error(`Error al subir el archivo: ${error}`);
+        toast.error(`Error al subir el archivo: ${uploadError}`);
       }
     } catch (err: any) {
-      toast.error("Error al subir el archivo.");
+      toast.error("Error inesperado en el flujo de subida.");
     }
   };
 

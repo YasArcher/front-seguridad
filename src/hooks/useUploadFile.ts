@@ -1,8 +1,8 @@
-import { useAES } from "./useAES";
-import { calculateSHA256HashHex, signHashHex } from "../utils/hash";
+import { calculateSHA256HashHexFromBlob, signHashHex } from "../utils/hash";
 import { useState } from "react";
 import { uploadFileService } from "../services/fileService";
 import { useAuth } from "../Context/AuthContext";
+import { useAES } from "./useAES";
 
 interface UploadResponse {
   success: boolean;
@@ -17,41 +17,44 @@ export const useUploadFile = () => {
   const { encrypt, error: aesError } = useAES();
 
   const uploadFile = async (
-    originalFile: File,
+    protectedBlob: Blob,   // protectedBlob recién reconstruido del protected_pdf (sin AES todavía)
+    fileName: string,      // file_name de /files/protect-dw-pdf
+    pdfPassword: string,   // pdf_password de /files/protect-dw-pdf
     token: string
   ): Promise<UploadResponse> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const originalBuffer = await originalFile.arrayBuffer();
+      // 1️⃣ Calcular hash del protectedBlob SIN cifrado
+      const fileHash = await calculateSHA256HashHexFromBlob(protectedBlob);
 
-      // 1. Calcular el hash SHA-256 del archivo original
-      const fileHash = await calculateSHA256HashHex(originalFile);
-
-      // 2. Firmar el hash
+      // 2️⃣ Firmar el hash
       const signature = await signHashHex(fileHash);
 
-      // 3. Cifrar el archivo
-      const encryptedBytes = await encrypt(new Uint8Array(originalBuffer));
-      if (!encryptedBytes)
-        throw new Error(aesError || "Fallo en cifrado AES personalizado");
+      // 3️⃣ Aplicar cifrado AES al protectedBlob
+      const protectedArrayBuffer = await protectedBlob.arrayBuffer();
+      const protectedBytes = new Uint8Array(protectedArrayBuffer);
 
-      // 4. Crear archivo cifrado como File
-      const encryptedBlob = new Blob([new Uint8Array(encryptedBytes)], {
-        type: originalFile.type,
-      });
-      const encryptedFile = new File([encryptedBlob], originalFile.name, {
-        type: originalFile.type,
+      const encryptedBytes = await encrypt(protectedBytes);
+      if (!encryptedBytes) {
+        throw new Error(aesError || "Fallo en cifrado AES personalizado.");
+      }
+
+      // 4️⃣ Construir File con el resultado cifrado (doblemente protegido)
+      const encryptedBlob = new Blob([new Uint8Array(encryptedBytes)], { type: "application/pdf" });
+      const encryptedFile = new File([encryptedBlob], fileName, {
+        type: "application/pdf",
       });
 
-      // 5. Subir al servidor
+      // 5️⃣ Subir al servidor
       const { status, data } = await uploadFileService(
         encryptedFile,
         token,
         logout,
-        fileHash,
-        signature
+        fileHash,    // hash del PDF protegido (sin AES)
+        signature,   // firma de ese hash
+        pdfPassword  // contraseña que dio el backend
       );
 
       if (status >= 200 && status < 300) {
