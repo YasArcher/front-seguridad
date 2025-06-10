@@ -6,6 +6,8 @@ interface ProtectedResult {
   protectedBlob: Blob;
   pdfPassword: string;
   fileName: string;
+  fileHash: string;
+  signature: string;
 }
 
 export const useProtectPdf = () => {
@@ -25,7 +27,7 @@ export const useProtectPdf = () => {
 
     try {
       // Paso 1️⃣ → proteger PDF (enviar a /files/protect-dw-pdf)
-      const { protected_pdf, pdf_password, file_name } = await protectDownloadPdfService(file, token, logout);
+      const { protected_pdf, pdf_password, file_name, file_hash, signature } = await protectDownloadPdfService(file, token, logout);
 
       // Paso 2️⃣ → reconstruir Blob desde base64
       const byteCharacters = atob(protected_pdf);
@@ -33,11 +35,13 @@ export const useProtectPdf = () => {
       const byteArray = new Uint8Array(byteNumbers);
       const protectedBlob = new Blob([byteArray], { type: "application/pdf" });
 
-      // Devolver resultado
+      // Devolver resultado COMPLETO
       return {
         protectedBlob,
         pdfPassword: pdf_password,
         fileName: file_name,
+        fileHash: file_hash,
+        signature: signature,
       };
     } catch (err: any) {
       console.error("Error en protectPdf:", err);

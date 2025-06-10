@@ -119,14 +119,17 @@ const ConfiguracionArchivos = () => {
         return;
       }
 
-      const { protectedBlob, pdfPassword, fileName } = protectResult;
+      const { protectedBlob, pdfPassword, fileName, fileHash, signature } =
+        protectResult;
 
       // Paso 2️⃣ → subir el archivo protegido y cifrado
       const result = await uploadFile(
         protectedBlob,
         fileName,
         pdfPassword,
-        token
+        token,
+        fileHash,
+        signature
       );
 
       if (result.success) {

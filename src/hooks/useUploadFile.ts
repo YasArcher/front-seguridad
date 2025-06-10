@@ -1,4 +1,3 @@
-import { calculateSHA256HashHexFromBlob, signHashHex } from "../utils/hash";
 import { useState } from "react";
 import { uploadFileService } from "../services/fileService";
 import { useAuth } from "../Context/AuthContext";
@@ -17,22 +16,18 @@ export const useUploadFile = () => {
   const { encrypt, error: aesError } = useAES();
 
   const uploadFile = async (
-    protectedBlob: Blob,   // protectedBlob recién reconstruido del protected_pdf (sin AES todavía)
+    protectedBlob: Blob,   // protectedBlob reconstruido del protected_pdf
     fileName: string,      // file_name de /files/protect-dw-pdf
     pdfPassword: string,   // pdf_password de /files/protect-dw-pdf
+    fileHash: string,      // file_hash de /files/protect-dw-pdf (NO recalculado!)
+    signature: string,     // signature de /files/protect-dw-pdf
     token: string
   ): Promise<UploadResponse> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // 1️⃣ Calcular hash del protectedBlob SIN cifrado
-      const fileHash = await calculateSHA256HashHexFromBlob(protectedBlob);
-
-      // 2️⃣ Firmar el hash
-      const signature = await signHashHex(fileHash);
-
-      // 3️⃣ Aplicar cifrado AES al protectedBlob
+      // 1️⃣ Aplicar cifrado AES al protectedBlob
       const protectedArrayBuffer = await protectedBlob.arrayBuffer();
       const protectedBytes = new Uint8Array(protectedArrayBuffer);
 
@@ -41,31 +36,36 @@ export const useUploadFile = () => {
         throw new Error(aesError || "Fallo en cifrado AES personalizado.");
       }
 
-      // 4️⃣ Construir File con el resultado cifrado (doblemente protegido)
+      // 2️⃣ Construir File con el resultado cifrado (doblemente protegido)
       const encryptedBlob = new Blob([new Uint8Array(encryptedBytes)], { type: "application/pdf" });
       const encryptedFile = new File([encryptedBlob], fileName, {
         type: "application/pdf",
       });
 
-      // 5️⃣ Subir al servidor
+      // 3️⃣ Subir al servidor usando los valores dados por el backend
       const { status, data } = await uploadFileService(
         encryptedFile,
         token,
         logout,
-        fileHash,    // hash del PDF protegido (sin AES)
-        signature,   // firma de ese hash
-        pdfPassword  // contraseña que dio el backend
+        fileHash,
+        signature,
+        pdfPassword
       );
 
-      if (status >= 200 && status < 300) {
+      // 4️⃣ Evaluar respuesta de forma robusta
+      if (status >= 200 && status < 300 && data?.success !== false) {
         return { success: true, data };
       } else {
-        const errorMessage = data?.error || "Error al subir el archivo.";
+        const errorMessage =
+          data?.error ||
+          `Error al subir el archivo (HTTP ${status})`;
         setError(errorMessage);
         return { success: false, error: errorMessage };
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "Error inesperado al procesar el archivo.";
+      // Si ocurre un error inesperado (fetch falla, CORS, red, etc.)
+      const errorMessage =
+        err?.message || "Error inesperado al procesar el archivo.";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

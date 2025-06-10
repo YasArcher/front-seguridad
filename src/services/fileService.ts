@@ -136,8 +136,7 @@ export const uploadFileService = async (
 
   if (fileHash) formData.append('file_hash', fileHash);
   if (signature) formData.append('signature', signature);
-  if (pdfPassword) formData.append('pdf_password', pdfPassword); // <--- agregar este campo requerido
-
+  if (pdfPassword) formData.append('pdf_password', pdfPassword);
   const response = await customFetch(`${API_URL}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -303,6 +302,8 @@ export const protectDownloadPdfService = async (
   protected_pdf: string;
   pdf_password: string;
   file_name: string;
+  file_hash: string;
+  signature: string;
 }> => {
   const formData = new FormData();
   formData.append('file', file);
@@ -311,7 +312,6 @@ export const protectDownloadPdfService = async (
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
-      // No poner Content-Type → fetch la pone automáticamente con FormData
     },
     body: formData,
   }, logout);
@@ -322,10 +322,12 @@ export const protectDownloadPdfService = async (
     throw new Error(responseData.error || 'Error al proteger el PDF.');
   }
 
-  // Devolvemos el objeto esperado
+  // Devolvemos el objeto esperado, AHORA incluyendo file_hash y signature
   return {
     protected_pdf: responseData.protected_pdf,
     pdf_password: responseData.pdf_password,
     file_name: responseData.file_name,
+    file_hash: responseData.file_hash,
+    signature: responseData.signature,
   };
 };
