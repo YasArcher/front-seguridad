@@ -13,13 +13,11 @@ import FileCard from "../components/ui/FileCard";
 import { toast } from "react-toastify";
 import type { User } from "../services/Types/User";
 import { useUploadFile } from "../hooks/useUploadFile";
-import { useAuth } from "../Context/AuthContext";
 import { useProtectPdf } from "../hooks/useProtectPdf";
 
 const ConfiguracionArchivos = () => {
   const { protectPdf, error: protectError } = useProtectPdf();
   const { uploadFile, error: uploadError } = useUploadFile();
-  const { token } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -105,10 +103,6 @@ const ConfiguracionArchivos = () => {
   };
 
   const handleUploadFile = async (file: File) => {
-    if (!token) {
-      toast.error("No hay sesión activa.");
-      return;
-    }
 
     try {
       // Paso 1️⃣ → proteger el PDF
@@ -127,7 +121,6 @@ const ConfiguracionArchivos = () => {
         protectedBlob,
         fileName,
         pdfPassword,
-        token,
         fileHash,
         signature
       );

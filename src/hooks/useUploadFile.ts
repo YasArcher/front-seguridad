@@ -21,10 +21,16 @@ export const useUploadFile = () => {
     pdfPassword: string,   // pdf_password de /files/protect-dw-pdf
     fileHash: string,      // file_hash de /files/protect-dw-pdf (NO recalculado!)
     signature: string,     // signature de /files/protect-dw-pdf
-    token: string
   ): Promise<UploadResponse> => {
+    const { token } = useAuth();
     setIsLoading(true);
     setError(null);
+
+    if (!token) {
+      const errorMessage = "Token de autenticación no disponible.";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
 
     try {
       // 1️⃣ Aplicar cifrado AES al protectedBlob

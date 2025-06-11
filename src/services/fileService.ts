@@ -52,6 +52,7 @@ export const getFilesService = async (
   actionType: 'basic' | 'full' = 'basic',
   logout?: () => void
 ): Promise<FileCardProps[]> => {
+  console.log("Token en getFilesService:", token);
   const response = await customFetch(`${API_URL}?page=${page}&per_page=${perPage}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
@@ -137,6 +138,7 @@ export const uploadFileService = async (
   if (fileHash) formData.append('file_hash', fileHash);
   if (signature) formData.append('signature', signature);
   if (pdfPassword) formData.append('pdf_password', pdfPassword);
+  console.log("token en uploadFileService:", token);
   const response = await customFetch(`${API_URL}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
