@@ -52,7 +52,6 @@ export const getFilesService = async (
   actionType: 'basic' | 'full' = 'basic',
   logout?: () => void
 ): Promise<FileCardProps[]> => {
-  console.log("Token en getFilesService:", token);
   const response = await customFetch(`${API_URL}?page=${page}&per_page=${perPage}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
@@ -138,7 +137,6 @@ export const uploadFileService = async (
   if (fileHash) formData.append('file_hash', fileHash);
   if (signature) formData.append('signature', signature);
   if (pdfPassword) formData.append('pdf_password', pdfPassword);
-  console.log("token en uploadFileService:", token);
   const response = await customFetch(`${API_URL}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -169,7 +167,6 @@ export const shareFileService = async (
   { fileId, token, targetUserId, permissionType }: ShareFileParams,
   logout?: () => void
 ): Promise<void> => {
-  console.log('Sharing file:', { fileId, targetUserId, permissionType });
   const response = await customFetch(`${API_URL}${fileId}/share`, {
     method: 'POST',
     headers: {
@@ -242,7 +239,6 @@ export const viewFileService = async (
       Authorization: `Bearer ${token}`,
     },
   });
-  console.log("✅ Headers del archivo:", response.headers.get("Content-Type"));
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

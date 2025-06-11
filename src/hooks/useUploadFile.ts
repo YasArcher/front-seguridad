@@ -13,16 +13,16 @@ export const useUploadFile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { logout } = useAuth();
+  const { token } = useAuth();
   const { encrypt, error: aesError } = useAES();
 
   const uploadFile = async (
-    protectedBlob: Blob,   // protectedBlob reconstruido del protected_pdf
-    fileName: string,      // file_name de /files/protect-dw-pdf
-    pdfPassword: string,   // pdf_password de /files/protect-dw-pdf
-    fileHash: string,      // file_hash de /files/protect-dw-pdf (NO recalculado!)
-    signature: string,     // signature de /files/protect-dw-pdf
+    protectedBlob: Blob, // protectedBlob reconstruido del protected_pdf
+    fileName: string, // file_name de /files/protect-dw-pdf
+    pdfPassword: string, // pdf_password de /files/protect-dw-pdf
+    fileHash: string, // file_hash de /files/protect-dw-pdf (NO recalculado!)
+    signature: string // signature de /files/protect-dw-pdf
   ): Promise<UploadResponse> => {
-    const { token } = useAuth();
     setIsLoading(true);
     setError(null);
 
@@ -43,7 +43,9 @@ export const useUploadFile = () => {
       }
 
       // 2️⃣ Construir File con el resultado cifrado (doblemente protegido)
-      const encryptedBlob = new Blob([new Uint8Array(encryptedBytes)], { type: "application/pdf" });
+      const encryptedBlob = new Blob([new Uint8Array(encryptedBytes)], {
+        type: "application/pdf",
+      });
       const encryptedFile = new File([encryptedBlob], fileName, {
         type: "application/pdf",
       });
@@ -63,8 +65,7 @@ export const useUploadFile = () => {
         return { success: true, data };
       } else {
         const errorMessage =
-          data?.error ||
-          `Error al subir el archivo (HTTP ${status})`;
+          data?.error || `Error al subir el archivo (HTTP ${status})`;
         setError(errorMessage);
         return { success: false, error: errorMessage };
       }

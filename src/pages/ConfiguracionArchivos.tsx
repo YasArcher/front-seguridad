@@ -133,7 +133,8 @@ const ConfiguracionArchivos = () => {
         toast.error(`Error al subir el archivo: ${uploadError}`);
       }
     } catch (err: any) {
-      toast.error("Error inesperado en el flujo de subida.");
+      toast.error("Error inesperado en el flujo de subida.", err);
+      console.error("Error inesperado en el flujo de subida:", err);
     }
   };
 
