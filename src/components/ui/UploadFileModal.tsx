@@ -4,6 +4,7 @@ import type { UploadFileModalProps } from "./types/UploadFileModalProps";
 import Modal from "./Modal";
 import Button from "./Button";
 import { toast } from "react-toastify";
+import { useAES } from "../../hooks/useAES";
 
 interface GenericUploadFileModalProps extends UploadFileModalProps {
   onUpload: (file: File) => Promise<void>;
@@ -29,6 +30,41 @@ const UploadFileModal: FC<GenericUploadFileModalProps> = ({ isOpen, onClose, onU
       setError(null);
 
       await onUpload(selectedFile);
+
+
+      //////////////////////////////////////////////////////////////////
+      // Codifica la cadena a Uint8Array
+      //const { encrypt, decrypt } = useAES();
+
+      //const encoder = new TextEncoder();
+      //const data = encoder.encode("software123");
+
+      // Cifra los datos (Uint8Array)
+      //const encryptedData1 = await encrypt(data);
+
+      // 🔸 Mostrar el texto cifrado en HEX (legible)
+      //const hexString = Array.from(encryptedData1 || new Uint8Array()).map((b) => b.toString(16).padStart(2, "0")).join("");
+      //toast.success("Texto cifrado (hex): " + hexString);
+      //console.log("Texto cifrado (hex):", hexString);
+
+      // 🔸 Si quieres mostrar en Base64 también (opcional)
+      //const base64String = btoa(
+        //String.fromCharCode(...(encryptedData1 || new Uint8Array()))
+      //);
+      //console.log("Texto cifrado (base64):", base64String);
+
+      // Descifra los datos
+      //const decryptedData = await decrypt(encryptedData1 || new Uint8Array());
+
+      // Decodifica el resultado descifrado como texto
+      //const textDecoder = new TextDecoder();
+      //const originalText = textDecoder.decode(
+        //decryptedData || new Uint8Array()
+      //);
+      //toast.success("Texto descifrado: " + originalText);
+      //console.log("Texto descifrado:", originalText);
+      
+      //////////////////////////////////
 
       toast.success("Archivo subido exitosamente");
       onClose();
